@@ -1,17 +1,65 @@
 ---
+import Layout from "./layout.astro";
+import { Button } from "@/components/ui/button";
+import { BookSearch, MapPin } from "lucide-react";
 
+import { getCollection } from "astro:content";
+import { groupPhotosByLocation } from "@/lib/photos";
+
+const photos = await getCollection("photos");
+const locations = groupPhotosByLocation(photos);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+  <!-- Header -->
+  <header class="flex items-center gap-3 flex-col">
+    <img
+      src="./sarah pfp.jpg"
+      class="rounded-md h-44 w-44 text-center"
+      alt="A picture of Sarah from the back"
+    />
+    <h1>Sarah's Snaps</h1>
+    <p class="lead">Frames of interesting visuals I find</p>
+    <!-- Statistics Part -->
+    <!-- Random picture button -->
+    <!-- <Button -->
+    <Button className="mt-2 cursor-pointer" variant="default"
+      ><BookSearch /> Show me a random picture!
+    </Button>
+  </header>
+  <body>
+    <!-- Cities gallery/pick -->
+    <section
+      class="grid grid-cols-1 sm:grid-cols-2 sm:px-96 sm:py-16 p-6 transition-all gap-6"
+    >
+      {
+        locations.map((loc) => (
+          <a
+            href={loc.slug}
+            class="border p-6 backdrop-blur-sm rounded-xl shadow-md hover:shadow-xl transition"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <img
+                src={loc.flag}
+                class="rounded-xs"
+                height="40"
+                width="40"
+                alt={`${loc.country}'s Flag'`}
+              />
+              <div class="text-sm px-3 py-1 rounded-full font-medium border border-primary bg-primary text-primary-foreground">
+                {loc.count} {loc.count === 1 ? "photo" : "photos"}
+              </div>
+            </div>
+
+            <div class="flex items-center text-foreground text-sm">
+              <MapPin class="w-4 h-4 mr-1" />
+              <h2 class="ml-1 text-md lg:text-xl font-semibold capitalize">
+                {loc.city}, {loc.country}
+              </h2>
+            </div>
+          </a>
+        ))
+      }
+    </section>
+  </body>
+</Layout>

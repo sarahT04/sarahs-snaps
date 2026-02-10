@@ -1,0 +1,76 @@
+---
+import "@/styles/global.css";
+import SystemModeToggle from "@/components/SystemModeToggle";
+import { Button } from "@/components/ui/button";
+import { HomeIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+---
+
+<!-- Dark mode -->
+<script is:inline>
+  const getThemePreference = () => {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
+      return localStorage.getItem("theme");
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  };
+  const isDark = getThemePreference() === "dark";
+  document.documentElement.classList[isDark ? "add" : "remove"]("dark");
+
+  if (typeof localStorage !== "undefined") {
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+</script>
+
+<html lang="en" transition:animate="slide">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title ? `${title} • Sarah's Snaps` : "Sarah's Snaps"}</title>
+  </head>
+
+  <nav class="py-4 px-10 flex gap-2">
+    <!-- Home Button -->
+    <a href="/" class="rounded-full" aria-label="Go to home">
+      <Button
+        variant="outline"
+        size="icon"
+        className={cn(
+          "rounded-full",
+          "border-sidebar-border",
+          "bg-transparent",
+          "h-10",
+          "w-10",
+        )}
+      >
+        <HomeIcon />
+      </Button>
+    </a>
+    <SystemModeToggle client:load />
+  </nav>
+
+  <slot />
+
+  <footer class="text-center my-5">
+    <p>Made with 🧡 by Sarah with Astro</p>
+  </footer>
+
+
+</html>
