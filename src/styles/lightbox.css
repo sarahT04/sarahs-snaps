@@ -1,0 +1,353 @@
+.city-lightbox {
+  position: fixed;
+  inset: 0;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  transition: opacity 250ms ease;
+}
+
+.city-lightbox[data-open="false"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.city-lightbox[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 1rem;
+  padding: 4rem;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lightbox-bg-panel {
+  flex: 1;
+  border-radius: 2rem;
+  background-size: cover;
+  background-position: center;
+  filter: blur(52px) saturate(1.2);
+  opacity: 0.4;
+  animation: lightboxDrift 24s linear infinite;
+  transform: scale(1.3);
+}
+
+.lightbox-bg-panel:nth-child(2) {
+  opacity: 0.3;
+  animation-direction: reverse;
+}
+
+.lightbox-stage {
+  position: relative;
+  z-index: 1;
+  width: min(94vw, 1200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1vw, 0.9rem);
+  padding: 0 clamp(0.5rem, 2vw, 2rem);
+}
+
+.lightbox-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+  max-height: calc(100vh - 3rem);
+}
+
+.lightbox-image-shell {
+  position: relative;
+  border-radius: 0;
+  background: transparent;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: var(--image-aspect, 3 / 2);
+  max-width: min(86vw, 1100px);
+  max-height: calc(100vh - 6rem);
+}
+
+.lightbox-image-shell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lightbox-info-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem 1.25rem 1.25rem;
+  background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.82) 100%);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.group:hover .lightbox-info-overlay,
+.group:focus-within .lightbox-info-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lightbox-figure[data-info-open="true"] .lightbox-info-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lightbox-figure[data-info-open="true"] .lightbox-image-shell {
+  cursor: pointer;
+}
+
+.lightbox-info-body {
+  width: 100%;
+  color: #f8fafc;
+  font-size: 0.95rem;
+}
+
+.lightbox-info-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lightbox-info-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.lightbox-info-heading time {
+  font-size: 0.9rem;
+  color: rgba(248, 250, 252, 0.72);
+}
+
+.lightbox-info-excerpt {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.lightbox-info-excerpt.is-empty {
+  display: none;
+}
+
+.lightbox-figure figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #f8fafc;
+}
+
+.lightbox-caption-headline {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.lightbox-caption-headline h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.lightbox-caption-headline time {
+  font-size: 0.95rem;
+  color: rgba(248, 250, 252, 0.65);
+}
+
+.lightbox-location {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: rgba(248, 250, 252, 0.6);
+  margin: 0;
+}
+
+.lightbox-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+
+.lightbox-nav-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.lightbox-nav-controls > * {
+  pointer-events: auto;
+}
+
+.lightbox-nav {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  background: rgba(3, 8, 15, 0.75);
+  color: #f8fafc;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
+  z-index: 2;
+}
+
+.lightbox-nav:hover {
+  transform: scale(1.05);
+  background: rgba(255, 188, 75, 0.25);
+}
+
+.lightbox-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.lightbox-nav:focus-visible,
+.lightbox-close:focus-visible {
+  outline: 2px solid rgba(255, 188, 75, 0.85);
+  outline-offset: 2px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  background: rgba(7, 12, 20, 0.9);
+  color: #f8fafc;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  border: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .lightbox-nav-controls {
+    padding: 0 0.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .city-lightbox {
+    padding: 1rem;
+  }
+
+  .lightbox-stage {
+    width: 100%;
+    padding: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .lightbox-figure {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .lightbox-nav-controls {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    justify-content: center;
+    gap: 0.75rem;
+    pointer-events: auto;
+  }
+
+  .lightbox-nav {
+    width: 100%;
+    max-width: 180px;
+    height: 3rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    background: rgba(7, 12, 20, 0.85);
+  }
+
+  .lightbox-nav svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .lightbox-image-shell {
+    min-height: 220px;
+  }
+
+  .lightbox-caption-headline h2 {
+    font-size: 1.05rem;
+  }
+
+  .lightbox-close {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-lightbox,
+  .lightbox-nav,
+  .lightbox-bg-panel {
+    transition: none;
+    animation: none;
+  }
+}
+
+@keyframes lightboxDrift {
+  0% {
+    transform: scale(1.25) translateX(-2%);
+  }
+
+  50% {
+    transform: scale(1.3) translateX(2%);
+  }
+
+  100% {
+    transform: scale(1.25) translateX(-2%);
+  }
+}

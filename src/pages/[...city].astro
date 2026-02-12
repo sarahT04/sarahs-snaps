@@ -1,9 +1,12 @@
 ---
+import "@/styles/lightbox.css"
 import Layout from "./layout.astro";
 import { getCollection } from "astro:content";
 import { getPhotosByCity, groupPhotosByLocation } from "@/lib/photos";
 import { getCountryFlag } from "@/lib/photos";
 import { getLocationFromSlug } from "@/lib/slug";
+import { Button } from "@/components/ui/button";
+import { CircleX, ArrowLeftCircle, ArrowRightCircle } from "lucide-react";
 
 export async function getStaticPaths() {
   const photos = await getCollection("photos");
@@ -12,7 +15,7 @@ export async function getStaticPaths() {
   // Generate both city-only and country/city paths for flexibility
   const paths = locations.flatMap((loc) => [
     { params: { city: loc.city } },
-    { params: { city: `${loc.country}/${loc.city}` } },
+    { params: { city: `${loc.country}/${loc.city}` } }, 
   ]);
 
   return paths;
@@ -69,6 +72,7 @@ function excerptFromEntry(entry: any) {
 
 const lightboxManifest = photos.map((entry, index) => ({
   index,
+  id: entry.data.id,
   src: entry.data.image.src,
   width: entry.data.image.width,
   height: entry.data.image.height,
@@ -82,9 +86,10 @@ const lightboxManifest = photos.map((entry, index) => ({
 }));
 ---
 
-<Layout title={`${prettyCity} ${prettyCountry ? `, ${prettyCountry}` : ""}`}>
+<Layout title={locationLabel}>
   <body>
     <main class="max-w-6xl mx-auto p-6">
+      <!-- HEADER: FLAG + COUNTRY + PHOTOS LIST -->
       <header class="mb-6 flex gap-1">
         {
           metadata.flag && (
@@ -106,15 +111,17 @@ const lightboxManifest = photos.map((entry, index) => ({
           </p>
         </div>
       </header>
-
+      <!-- GALLERY -->
       {
         photos.length === 0 ? (
-          <p>No photos found for this location.</p>
+          <p class="text-center">No photos found for this location.</p>
         ) : (
           <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
             {photos.map((p, i) => (
               <figure
-                class="group relative rounded-lg overflow-hidden border cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                class="group relative rounded-lg overflow-hidden border cursor-zoom-in
+                aspect-square focus-visible:outline-2 focus-visible:outline-offset-2 
+                focus-visible:outline-primary"
                 data-photo-idx={i}
                 tabindex="0"
                 role="button"
@@ -126,11 +133,11 @@ const lightboxManifest = photos.map((entry, index) => ({
                   width={p.data.image.width}
                   height={p.data.image.height}
                   alt={p.data.title}
-                  class="w-full h-auto block"
+                  class="w-full h-full block object-cover"
                   loading="lazy"
                 />
-
-                <div id="figure-click" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {/* on hover will show picture details */}
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <div class="absolute bottom-0 left-0 right-0 p-4 text-primary-foreground">
                     <h3 class="text-sm font-semibold">{p.data.title}</h3>
                     {excerptFromEntry(p) && (
@@ -154,6 +161,7 @@ const lightboxManifest = photos.map((entry, index) => ({
         )
       }
     </main>
+    <!-- LIGHTBOX -->
     {photos.length > 0 && (
       <div
         class="city-lightbox"
@@ -168,24 +176,12 @@ const lightboxManifest = photos.map((entry, index) => ({
           <div class="lightbox-bg-panel" data-lightbox-bg-prev></div>
           <div class="lightbox-bg-panel" data-lightbox-bg-next></div>
         </div>
-        <button
-          class="lightbox-close"
-          data-lightbox-close
-          type="button"
-          aria-label="Close viewer"
-        >
-          &#x2715;
-        </button>
+        <Button variant="outline" data-lightbox-close aria-label="Close viewer"
+        className="absolute md:top-6 md:right-6 top-3 right-3 z-20 border-rounded bg-primary">
+          <CircleX />
+        </Button>
         <div class="lightbox-stage">
-          <div
-            class="lightbox-preview-shell lightbox-preview-shell-prev"
-            data-preview-shell="prev"
-            data-empty="true"
-            aria-hidden="true"
-          >
-            <img data-lightbox-preview-prev alt="" loading="lazy" decoding="async" />
-          </div>
-          <figure class="lightbox-figure">
+          <figure class="lightbox-figure group">
             <div class="lightbox-image-shell">
               <img
                 data-lightbox-main
@@ -193,41 +189,39 @@ const lightboxManifest = photos.map((entry, index) => ({
                 loading="eager"
                 decoding="async"
               />
-            </div>
-            <figcaption>
-              <div class="lightbox-caption-headline">
-                <h2 data-lightbox-title></h2>
-                <time data-lightbox-date></time>
+              <div class="lightbox-info-overlay" aria-hidden="true">
+                <div class="lightbox-info-body">
+                  <div class="lightbox-info-heading">
+                    <h2 data-lightbox-title></h2>
+                    <time data-lightbox-date></time>
+                    <p data-lightbox-location class="lightbox-location">{locationLabel}</p>
+                  </div>
+                  <p class="lightbox-info-excerpt" data-lightbox-excerpt></p>
+                  <div class="lightbox-tags" data-lightbox-tags></div>
+                </div>
               </div>
-              <p class="lightbox-location">{locationLabel}</p>
-              <p class="lightbox-excerpt" data-lightbox-excerpt></p>
-              <div class="lightbox-tags" data-lightbox-tags></div>
-            </figcaption>
+            </div>
           </figure>
-          <div
-            class="lightbox-preview-shell lightbox-preview-shell-next"
-            data-preview-shell="next"
-            data-empty="true"
-            aria-hidden="true"
-          >
-            <img data-lightbox-preview-next alt="" loading="lazy" decoding="async" />
+          <div class="lightbox-nav-controls" aria-label="Lightbox navigation">
+            <Button
+              variant="outline"
+              aria-label="View previous photo"
+              data-lightbox-prev
+              className="lightbox-nav lightbox-nav-prev"
+              type="button"
+            >
+              <ArrowLeftCircle />
+            </Button>
+            <Button
+              variant="outline"
+              aria-label="View next photo"
+              data-lightbox-next
+              className="lightbox-nav lightbox-nav-next"
+              type="button"
+            >
+              <ArrowRightCircle />
+            </Button>
           </div>
-          <button
-            class="lightbox-nav lightbox-nav-prev"
-            type="button"
-            aria-label="View previous photo"
-            data-lightbox-prev
-          >
-            &#10094;
-          </button>
-          <button
-            class="lightbox-nav lightbox-nav-next"
-            type="button"
-            aria-label="View next photo"
-            data-lightbox-next
-          >
-            &#10095;
-          </button>
         </div>
         <div class="sr-only" aria-live="polite" data-lightbox-announcer></div>
       </div>
@@ -241,7 +235,8 @@ const lightboxManifest = photos.map((entry, index) => ({
     )}
     {photos.length > 0 && (
       <script is:inline>
-        (() => {
+          (() => {
+            let defaultLocation = "";
           const payloadEl = document.getElementById("city-photo-payload");
           if (!payloadEl) return;
           const payloadText = payloadEl.textContent;
@@ -253,10 +248,13 @@ const lightboxManifest = photos.map((entry, index) => ({
             photoData = [];
           }
           if (!photoData.length) return;
+          defaultLocation = photoData[0]?.location || "";
 
           const lightbox = document.querySelector("[data-lightbox]");
           if (!lightbox) return;
           const mainImg = lightbox.querySelector("[data-lightbox-main]");
+          const imageShell = lightbox.querySelector(".lightbox-image-shell");
+          const figureEl = lightbox.querySelector(".lightbox-figure");
           const prevBg = lightbox.querySelector("[data-lightbox-bg-prev]");
           const nextBg = lightbox.querySelector("[data-lightbox-bg-next]");
           const prevBtn = lightbox.querySelector("[data-lightbox-prev]");
@@ -265,15 +263,13 @@ const lightboxManifest = photos.map((entry, index) => ({
           const titleEl = lightbox.querySelector("[data-lightbox-title]");
           const dateEl = lightbox.querySelector("[data-lightbox-date]");
           const excerptEl = lightbox.querySelector("[data-lightbox-excerpt]");
+          const locationEl = lightbox.querySelector("[data-lightbox-location]");
           const tagsEl = lightbox.querySelector("[data-lightbox-tags]");
           const announcer = lightbox.querySelector("[data-lightbox-announcer]");
           const stage = lightbox.querySelector(".lightbox-stage");
-          const prevPreviewShell = lightbox.querySelector('[data-preview-shell="prev"]');
-          const nextPreviewShell = lightbox.querySelector('[data-preview-shell="next"]');
-          const prevPreviewImg = lightbox.querySelector("[data-lightbox-preview-prev]");
-          const nextPreviewImg = lightbox.querySelector("[data-lightbox-preview-next]");
           const figures = Array.from(document.querySelectorAll("[data-photo-idx]"));
           const docEl = document.documentElement;
+          const coarsePointerQuery = window.matchMedia ? window.matchMedia("(pointer: coarse)") : null;
           if (!mainImg || !stage) return;
 
           let currentIndex = 0;
@@ -281,10 +277,88 @@ const lightboxManifest = photos.map((entry, index) => ({
           const preloadCache = new Set();
           const total = photoData.length;
           const navDisabled = total <= 1;
+          let infoVisible = false;
+          let pointerSession = null;
 
           if (navDisabled) {
             if (prevBtn) prevBtn.setAttribute("disabled", "true");
             if (nextBtn) nextBtn.setAttribute("disabled", "true");
+          }
+
+          if (imageShell) {
+            imageShell.addEventListener("pointerdown", (event) => {
+              const coarsePointer = isCoarsePointer(event);
+              if (coarsePointer) {
+                try {
+                  imageShell.setPointerCapture(event.pointerId);
+                } catch {}
+              }
+              pointerSession = {
+                id: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                startTime: Date.now(),
+                isCoarse: coarsePointer,
+                swipeIntent: false,
+              };
+            });
+
+            imageShell.addEventListener("pointermove", (event) => {
+              if (!pointerSession || event.pointerId !== pointerSession.id) return;
+              const deltaX = event.clientX - pointerSession.startX;
+              const deltaY = event.clientY - pointerSession.startY;
+              if (
+                Math.abs(deltaX) > 18 &&
+                Math.abs(deltaX) > Math.abs(deltaY) * 1.25
+              ) {
+                pointerSession.swipeIntent = true;
+                event.preventDefault();
+              }
+            });
+
+            imageShell.addEventListener("pointerup", (event) => {
+              if (!pointerSession || event.pointerId !== pointerSession.id) return;
+              const session = pointerSession;
+              pointerSession = null;
+              try {
+                imageShell.releasePointerCapture(event.pointerId);
+              } catch {}
+              const deltaX = event.clientX - session.startX;
+              const deltaY = event.clientY - session.startY;
+              const duration = Date.now() - session.startTime;
+              const isSwipe =
+                session.isCoarse &&
+                duration < 700 &&
+                Math.abs(deltaX) > 55 &&
+                Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+              if (isSwipe) {
+                if (navDisabled) return;
+                currentIndex = (currentIndex + (deltaX < 0 ? 1 : -1) + total) % total;
+                updateLightbox();
+                return;
+              }
+              if (session.isCoarse && !session.swipeIntent) {
+                event.preventDefault();
+                toggleInfoVisibility();
+              }
+            });
+
+            imageShell.addEventListener("pointercancel", (event) => {
+              if (!pointerSession || event.pointerId !== pointerSession.id) return;
+              pointerSession = null;
+              try {
+                imageShell.releasePointerCapture(event.pointerId);
+              } catch {}
+            });
+          }
+
+          if (figureEl) {
+            figureEl.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleInfoVisibility();
+              }
+            });
           }
 
           figures.forEach((figure) => {
@@ -320,9 +394,11 @@ const lightboxManifest = photos.map((entry, index) => ({
             lightbox.dataset.open = "false";
             lightbox.setAttribute("aria-hidden", "true");
             docEl.style.overflow = previousOverflow;
+            resetInfoVisibility();
           }
 
           function updateLightbox() {
+            resetInfoVisibility();
             const current = photoData[currentIndex];
             if (!current) return;
             mainImg.src = current.src;
@@ -338,8 +414,20 @@ const lightboxManifest = photos.map((entry, index) => ({
             } else {
               mainImg.removeAttribute("height");
             }
+            if (imageShell) {
+              const numericWidth = Math.max(Number(current.width) || 0, 1);
+              const numericHeight = Math.max(Number(current.height) || 0, 1);
+              imageShell.style.setProperty("--image-aspect", `${numericWidth} / ${numericHeight}`);
+              imageShell.dataset.orientation =
+                numericWidth / numericHeight >= 2.2
+                  ? "panorama"
+                  : numericWidth >= numericHeight
+                    ? "landscape"
+                    : "portrait";
+            }
             if (titleEl) titleEl.textContent = current.title || "Untitled";
             if (dateEl) dateEl.textContent = current.formattedDate || current.date || "";
+            if (locationEl) locationEl.textContent = current.location || defaultLocation;
             if (excerptEl) {
               excerptEl.textContent = current.excerpt || "";
               excerptEl.classList.toggle("is-empty", !current.excerpt);
@@ -349,12 +437,13 @@ const lightboxManifest = photos.map((entry, index) => ({
               (current.tags || []).forEach((tag) => {
                 const badge = document.createElement("span");
                 badge.textContent = tag;
+                badge.className = "text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground mt-2";
                 tagsEl.appendChild(badge);
               });
               tagsEl.classList.toggle("has-tags", Boolean((current.tags || []).length));
             }
             const context = getContextPhotos();
-            syncContextImagery(context.prev, context.next);
+            updateBackdrop(context.prev, context.next);
             announce(`${current.title || "Photo"} — ${currentIndex + 1} of ${total}`);
           }
 
@@ -368,12 +457,6 @@ const lightboxManifest = photos.map((entry, index) => ({
             const prev = photoData[(currentIndex - 1 + total) % total];
             const next = photoData[(currentIndex + 1) % total];
             return { prev, next };
-          }
-
-          function syncContextImagery(prev, next) {
-            updateBackdrop(prev, next);
-            updatePreviewShell(prevPreviewShell, prevPreviewImg, prev, "Previous photo");
-            updatePreviewShell(nextPreviewShell, nextPreviewImg, next, "Next photo");
           }
 
           function updateBackdrop(prev, next) {
@@ -393,20 +476,6 @@ const lightboxManifest = photos.map((entry, index) => ({
                 nextBg.style.backgroundImage = "";
               }
             }
-          }
-
-          function updatePreviewShell(shell, imgEl, payload, fallbackLabel) {
-            if (!shell || !imgEl) return;
-            if (!payload) {
-              shell.dataset.empty = "true";
-              imgEl.removeAttribute("src");
-              imgEl.alt = "";
-              return;
-            }
-            shell.dataset.empty = "false";
-            imgEl.src = payload.src;
-            imgEl.alt = payload.title || fallbackLabel;
-            preload(payload.src);
           }
 
           function preload(src) {
@@ -468,308 +537,36 @@ const lightboxManifest = photos.map((entry, index) => ({
               announcer.textContent = message;
             });
           }
+
+          function isCoarsePointer(event) {
+            if (event.pointerType === "touch" || event.pointerType === "pen") {
+              return true;
+            }
+            if (!event.pointerType && coarsePointerQuery) {
+              return coarsePointerQuery.matches;
+            }
+            return false;
+          }
+
+          function toggleInfoVisibility() {
+            setInfoVisibility(!infoVisible);
+          }
+
+          function resetInfoVisibility() {
+            setInfoVisibility(false);
+          }
+
+          function setInfoVisibility(nextState) {
+            infoVisible = nextState;
+            if (!figureEl) return;
+            if (infoVisible) {
+              figureEl.dataset.infoOpen = "true";
+            } else {
+              delete figureEl.dataset.infoOpen;
+            }
+          }
         })();
       </script>
     )}
   </body>
 </Layout>
-
-<style>
-  .city-lightbox {
-    position: fixed;
-    inset: 0;
-    padding: 1.5rem;
-    background: radial-gradient(circle at 20% 20%, rgba(255, 188, 75, 0.12), transparent 55%),
-      radial-gradient(circle at 80% 0%, rgba(64, 160, 255, 0.16), transparent 45%),
-      rgba(2, 6, 13, 0.95);
-    backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    transition: opacity 250ms ease;
-  }
-
-  .city-lightbox[data-open="false"] {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .city-lightbox[data-open="true"] {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .lightbox-bg {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    gap: 1rem;
-    padding: 4rem;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .lightbox-bg-panel {
-    flex: 1;
-    border-radius: 2rem;
-    background-size: cover;
-    background-position: center;
-    filter: blur(52px) saturate(1.2);
-    opacity: 0.4;
-    animation: lightboxDrift 24s linear infinite;
-    transform: scale(1.3);
-  }
-
-  .lightbox-bg-panel:nth-child(2) {
-    opacity: 0.3;
-    animation-direction: reverse;
-  }
-
-  .lightbox-stage {
-    position: relative;
-    z-index: 1;
-    width: min(94vw, 1200px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .lightbox-figure {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.25rem;
-    width: min(86vw, 1000px);
-    max-height: calc(100vh - 3rem);
-    background: rgba(7, 12, 20, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 1.25rem;
-    box-shadow: 0 30px 120px rgba(0, 0, 0, 0.65);
-  }
-
-  .lightbox-image-shell {
-    position: relative;
-    border-radius: 0.9rem;
-    background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.08), rgba(2, 7, 16, 0.95));
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 320px;
-    max-height: min(72vh, 720px);
-  }
-
-  .lightbox-image-shell img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-
-  .lightbox-figure figcaption {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    color: #f8fafc;
-  }
-
-  .lightbox-caption-headline {
-    display: flex;
-    gap: 0.75rem;
-    align-items: baseline;
-    flex-wrap: wrap;
-  }
-
-  .lightbox-caption-headline h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-  }
-
-  .lightbox-caption-headline time {
-    font-size: 0.95rem;
-    color: rgba(248, 250, 252, 0.65);
-  }
-
-  .lightbox-location {
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.8rem;
-    color: rgba(248, 250, 252, 0.6);
-    margin: 0;
-  }
-
-  .lightbox-excerpt {
-    font-size: 0.95rem;
-    color: rgba(248, 250, 252, 0.82);
-    margin: 0;
-  }
-
-  .lightbox-excerpt.is-empty {
-    display: none;
-  }
-
-  .lightbox-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
-  .lightbox-tags span {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.35rem 0.6rem;
-    border-radius: 999px;
-    background: rgba(255, 188, 75, 0.18);
-    border: 1px solid rgba(255, 188, 75, 0.4);
-    color: #ffe5c0;
-  }
-
-  .lightbox-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 50%;
-    border: 1px solid rgba(248, 250, 252, 0.2);
-    background: rgba(3, 8, 15, 0.75);
-    color: #f8fafc;
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
-  }
-
-  .lightbox-nav:hover {
-    transform: translateY(-50%) scale(1.05);
-    background: rgba(255, 188, 75, 0.25);
-  }
-
-  .lightbox-nav:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-
-  .lightbox-nav:focus-visible,
-  .lightbox-close:focus-visible {
-    outline: 2px solid rgba(255, 188, 75, 0.85);
-    outline-offset: 2px;
-  }
-
-  .lightbox-nav-prev {
-    left: -4rem;
-  }
-
-  .lightbox-nav-next {
-    right: -4rem;
-  }
-
-  .lightbox-close {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    z-index: 2;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 999px;
-    border: 1px solid rgba(248, 250, 252, 0.2);
-    background: rgba(7, 12, 20, 0.9);
-    color: #f8fafc;
-    font-size: 1.25rem;
-    line-height: 1;
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    clip: rect(0, 0, 0, 0);
-    overflow: hidden;
-    border: 0;
-    white-space: nowrap;
-  }
-
-  @media (max-width: 1024px) {
-    .lightbox-nav-prev {
-      left: -2rem;
-    }
-
-    .lightbox-nav-next {
-      right: -2rem;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .city-lightbox {
-      padding: 1rem;
-    }
-
-    .lightbox-stage {
-      width: 100%;
-    }
-
-    .lightbox-figure {
-      width: 100%;
-      padding: 1rem;
-    }
-
-    .lightbox-nav {
-      width: 3rem;
-      height: 3rem;
-      font-size: 1.25rem;
-      background: rgba(7, 12, 20, 0.85);
-    }
-
-    .lightbox-nav-prev {
-      left: 0.25rem;
-    }
-
-    .lightbox-nav-next {
-      right: 0.25rem;
-    }
-  }
-
-  @media (max-width: 600px) {
-    .lightbox-image-shell {
-      min-height: 220px;
-    }
-
-    .lightbox-caption-headline h2 {
-      font-size: 1.05rem;
-    }
-
-    .lightbox-close {
-      top: 0.75rem;
-      right: 0.75rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .city-lightbox,
-    .lightbox-nav,
-    .lightbox-bg-panel {
-      transition: none;
-      animation: none;
-    }
-  }
-
-  @keyframes lightboxDrift {
-    0% {
-      transform: scale(1.25) translateX(-2%);
-    }
-
-    50% {
-      transform: scale(1.3) translateX(2%);
-    }
-
-    100% {
-      transform: scale(1.25) translateX(-2%);
-    }
-  }
-</style>
