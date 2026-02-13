@@ -12,10 +12,10 @@ const locations = groupPhotosByLocation(photos);
 
 <Layout>
   <!-- Header -->
-  <header class="flex items-center gap-3 flex-col">
+  <header class="flex flex-col items-center gap-3">
     <img
       src="./sarah pfp.jpg"
-      class="rounded-md h-44 w-44 text-center"
+      class="h-44 w-44 rounded-md text-center"
       alt="A picture of Sarah from the back"
     />
     <h1>Sarah's Snaps</h1>
@@ -30,15 +30,15 @@ const locations = groupPhotosByLocation(photos);
   <body>
     <!-- Cities gallery/pick -->
     <section
-      class="grid grid-cols-1 sm:grid-cols-2 sm:px-96 sm:py-16 p-6 transition-all gap-6"
+      class="grid grid-cols-1 gap-6 p-6 transition-all sm:grid-cols-2 sm:px-96 sm:py-16"
     >
       {
         locations.map((loc) => (
           <a
             href={loc.slug}
-            class="border p-6 backdrop-blur-sm rounded-xl shadow-md hover:shadow-xl transition"
+            class="rounded-xl border p-6 shadow-md backdrop-blur-sm transition hover:shadow-xl"
           >
-            <div class="flex items-start justify-between mb-3">
+            <div class="mb-3 flex items-start justify-between">
               <img
                 src={loc.flag}
                 class="rounded-xs"
@@ -46,14 +46,14 @@ const locations = groupPhotosByLocation(photos);
                 width="40"
                 alt={`${loc.country}'s Flag'`}
               />
-              <div class="text-sm px-3 py-1 rounded-full font-medium border border-primary bg-primary text-primary-foreground">
+              <div class="border-primary bg-primary text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium">
                 {loc.count} {loc.count === 1 ? "photo" : "photos"}
               </div>
             </div>
 
-            <div class="flex items-center text-foreground text-sm">
-              <MapPin class="w-4 h-4 mr-1" />
-              <h2 class="ml-1 text-md lg:text-xl font-semibold capitalize">
+            <div class="text-foreground flex items-center text-sm">
+              <MapPin class="mr-1 h-4 w-4" />
+              <h2 class="text-md ml-1 font-semibold capitalize lg:text-xl">
                 {loc.city}, {loc.country}
               </h2>
             </div>

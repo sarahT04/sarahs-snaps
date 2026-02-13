@@ -6,11 +6,11 @@
  * - remove non-url-safe characters
  */
 export function normalizeSegment(value: string): string {
-    return value
-        .trim()
-        .toLowerCase()
-        .replace(/[\s_]+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
 }
 
 /**
@@ -20,14 +20,14 @@ export function normalizeSegment(value: string): string {
  *   { country: "hungary", city: "budapest" }
  */
 export function getLocationFromSlug(slug: string) {
-    const [countryRaw, cityRaw] = slug.split('/')
+  const [countryRaw, cityRaw] = slug.split("/");
 
-    if (!countryRaw || !cityRaw) {
-        throw new Error(`Invalid photo slug: ${slug}`)
-    }
+  if (!countryRaw || !cityRaw) {
+    throw new Error(`Invalid photo slug: ${slug}`);
+  }
 
-    return {
-        country: normalizeSegment(countryRaw),
-        city: normalizeSegment(cityRaw),
-    }
+  return {
+    country: normalizeSegment(countryRaw),
+    city: normalizeSegment(cityRaw),
+  };
 }

@@ -59,7 +59,7 @@ export default function SystemModeToggle() {
           "transition-all",
           "duration-200",
           {
-            "-rotate-90 scale-0": theme === "dark" || theme === "system",
+            "scale-0 -rotate-90": theme === "dark" || theme === "system",
           },
         )}
       />
@@ -73,8 +73,8 @@ export default function SystemModeToggle() {
           "transition-all",
           "duration-200",
           {
-            "rotate-0 scale-100": theme === "dark",
-            "rotate-90 scale-0": theme === "theme-light" || theme === "system",
+            "scale-100 rotate-0": theme === "dark",
+            "scale-0 rotate-90": theme === "theme-light" || theme === "system",
           },
         )}
       />

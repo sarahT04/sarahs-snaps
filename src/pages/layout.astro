@@ -46,7 +46,7 @@ const { title } = Astro.props;
     <title>{title ? `${title} • Sarah's Snaps` : "Sarah's Snaps"}</title>
   </head>
 
-  <nav class="py-4 px-10 flex gap-2">
+  <nav class="flex gap-2 px-10 py-4">
     <!-- Home Button -->
     <a href="/" class="rounded-full" aria-label="Go to home">
       <Button
@@ -68,7 +68,7 @@ const { title } = Astro.props;
 
   <slot />
 
-  <footer class="text-center my-5">
+  <footer class="my-5 text-center">
     <p>Made with 🧡 by Sarah with Astro</p>
   </footer>
 
