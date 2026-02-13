@@ -6,7 +6,7 @@ import { getPhotosByCity, groupPhotosByLocation } from "@/lib/photos";
 import { getCountryFlag } from "@/lib/photos";
 import { getLocationFromSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
-import { CircleX, ArrowLeftCircle, ArrowRightCircle, ZoomIn } from "lucide-react";
+import { CircleX, ArrowLeft, ArrowRight, ZoomIn } from "lucide-react";
 
 export async function getStaticPaths() {
   const photos = await getCollection("photos");
@@ -235,14 +235,14 @@ const lightboxManifest = photos.map((entry, index) => {
                   </div>
                   <div class="lightbox__details bg-secondary text-secondary-foreground shadow-2xl">
                     <div>
-                      <p class="lightbox__location">{entry.location}</p>
-                      <h2 class="lightbox__headline">{entry.title}</h2>
+                      <p class="lightbox__location text-xs">{entry.location}</p>
+                      <h2 class="lightbox__headline text-xl font-bold">{entry.title}</h2>
                     </div>
                     {entry.excerpt && (
-                      <p class="lightbox__excerpt">{entry.excerpt}</p>
+                      <p class="lightbox__excerpt text-sm">{entry.excerpt}</p>
                     )}
                     <div class="lightbox__meta">
-                      <span class="lightbox__date">{entry.formattedDate}</span>
+                      <span class="lightbox__date text-xs">{entry.formattedDate}</span>
                       {entry.tags.length > 0 && (
                         <div class="lightbox__tags">
                           {entry.tags.map((tag) => (
@@ -263,7 +263,7 @@ const lightboxManifest = photos.map((entry, index) => {
                 data-lightbox-prev
             aria-label="Show previous photo"
               >
-            <ArrowLeftCircle className="size-8" aria-hidden="true" />
+            <ArrowLeft className="size-6" aria-hidden="true" />
               </Button>
          
          <Button
@@ -273,7 +273,7 @@ const lightboxManifest = photos.map((entry, index) => {
                 data-lightbox-next
             aria-label="Show next photo"
               >
-            <ArrowRightCircle className="size-8" aria-hidden="true" />
+            <ArrowRight className="size-6" aria-hidden="true" />
               </Button>
          
         </section>
