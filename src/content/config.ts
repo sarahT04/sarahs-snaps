@@ -12,6 +12,11 @@ export const collections = {
         src: z.string().url(),
         width: z.number(),
         height: z.number(),
+        thumbnail: z
+          .object({
+            src: z.string().url(),
+          })
+          .optional(),
       }),
     }),
   }),

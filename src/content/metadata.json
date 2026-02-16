@@ -1,0 +1,34 @@
+[
+  {
+    "city": "jakarta",
+    "country": "indonesia",
+    "flag": "https://flagicons.lipis.dev/flags/4x3/id.svg",
+    "code": "id",
+    "count": 3,
+    "title": "Jakarta, Indonesia"
+  },
+  {
+    "city": "wuhan",
+    "country": "china",
+    "flag": "https://flagicons.lipis.dev/flags/4x3/cn.svg",
+    "code": "cn",
+    "count": 3,
+    "title": "Wuhan, China"
+  },
+  {
+    "city": "budapest",
+    "country": "hungary",
+    "flag": "https://flagicons.lipis.dev/flags/4x3/hu.svg",
+    "code": "hu",
+    "count": 2,
+    "title": "Budapest, Hungary"
+  },
+  {
+    "city": "rome",
+    "country": "italy",
+    "flag": "https://flagicons.lipis.dev/flags/4x3/it.svg",
+    "code": "it",
+    "count": 3,
+    "title": "Rome, Italy"
+  }
+]

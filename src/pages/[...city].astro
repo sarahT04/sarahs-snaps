@@ -1,64 +1,33 @@
 ---
 import "@/styles/lightbox.css"
 import Layout from "./layout.astro";
-import { getCollection } from "astro:content";
 import { getPhotosByCity, groupPhotosByLocation } from "@/lib/photos";
-import { getCountryFlag } from "@/lib/photos";
-import { getLocationFromSlug } from "@/lib/slug";
+import { getMetadataFromSlug } from "@/lib/metadata";
 import { Button } from "@/components/ui/button";
 import { CircleX, ArrowLeft, ArrowRight, ZoomIn } from "lucide-react";
+import { getAllMetadata } from "@/lib/metadata";
+import { formatDate } from "@/lib/utils";
 
-export async function getStaticPaths() {
-  const photos = await getCollection("photos");
-  const locations = groupPhotosByLocation(photos);
+const INITIAL_BATCH_SIZE = 24;
+const LOAD_BATCH_SIZE = 24;
 
-  // Generate both city-only and country/city paths for flexibility
-  const paths = locations.flatMap((loc) => [
-    { params: { city: loc.city } },
-    { params: { city: `${loc.country}/${loc.city}` } }, 
-  ]);
-
+export function getStaticPaths() {
+  const locations = getAllMetadata();
+  const paths = locations.map((loc) => ({ params: { city: loc.city }}));
   return paths;
 }
 
-const raw = Astro.params.city || "";
-const segments = raw.split("/").filter(Boolean);
-// Support both "/rome" and "/italy/rome" style routes
-const city = segments.at(-1) ?? "";
-const country = segments.length > 1 ? segments[0] : undefined;
+const city = Astro.params.city || "";
 
 // Fetch photos for this location
-const photos = await getPhotosByCity(city, country);
+const photos = await getPhotosByCity(city);
 
-// Derive country when not present in the route, then build metadata (including flag)
-const derivedCountry =
-  country ??
-  (photos[0] ? getLocationFromSlug(photos[0].slug).country : undefined);
-const flagUrl = derivedCountry ? getCountryFlag(derivedCountry) : null;
-const metadata = { country: derivedCountry, flag: flagUrl };
-const prettyCity = city
-  .split("-")
-  .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-  .join(" ");
-const prettyCountry = derivedCountry
-  ? derivedCountry
-      .split("-")
-      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-      .join(" ")
-  : undefined;
-const locationLabel = prettyCountry ? `${prettyCity}, ${prettyCountry}` : prettyCity;
-
-function formatDate(dateStr: string) {
-  try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-    });
-  } catch {
-    return dateStr;
-  }
+if (photos.length === 0) {
+  throw new Response("Not found", { status: 404 });
 }
+
+const { country, flag, title: locationLabel, code, count } = getMetadataFromSlug(city);
+
 
 function excerptFromEntry(entry: any) {
   const raw = (entry?.body ?? "").trim();
@@ -70,7 +39,7 @@ function excerptFromEntry(entry: any) {
   return slice + (clean.length > 140 ? "…" : "");
 }
 
-const lightboxManifest = photos.map((entry, index) => {
+const serializedPhotos = photos.map((entry, index) => {
   const width = entry.data.image.width;
   const height = entry.data.image.height;
   const aspectRatio = width && height ? `${width} / ${height}` : null;
@@ -84,10 +53,13 @@ const lightboxManifest = photos.map((entry, index) => {
     }
   }
 
+  const thumbSrc = entry.data.image.thumbnail?.src ?? entry.data.image.src;
+
   return {
     index,
     id: entry.data.id,
-    src: entry.data.image.src,
+    fullSrc: entry.data.image.src,
+    thumbSrc,
     width,
     height,
     orientation,
@@ -101,6 +73,11 @@ const lightboxManifest = photos.map((entry, index) => {
     location: locationLabel,
   };
 });
+
+const totalPhotos = count;
+const initialPhotos = serializedPhotos.slice(0, INITIAL_BATCH_SIZE);
+const initialCount = initialPhotos.length;
+const manifestJson = JSON.stringify(serializedPhotos).replace(/</g, "\\u003c");
 ---
 
 <Layout title={locationLabel}>
@@ -109,10 +86,10 @@ const lightboxManifest = photos.map((entry, index) => {
       <!-- HEADER: FLAG + COUNTRY + PHOTOS LIST -->
       <header class="mb-6 flex gap-1">
         {
-          metadata.flag && (
+          flag && (
             <img
-              src={metadata.flag}
-              alt={`${prettyCountry ?? prettyCity} flag`}
+              src={flag}
+              alt={`${country} flag`}
               class="h-12 w-auto inline-block mr-2 rounded-xs"
               loading="lazy"
             />
@@ -120,65 +97,100 @@ const lightboxManifest = photos.map((entry, index) => {
         }
         <div>
           <h1 class="text-2xl font-semibold text-left leading-none">
-            {prettyCity}{prettyCountry ? `, ${prettyCountry}` : ""}
+            {locationLabel}
           </h1>
           <p class="text-muted-foreground">
-            {photos.length}
-            {photos.length === 1 ? "photo" : "photos"}
+            {totalPhotos}{" "}
+            {totalPhotos === 1 ? "photo" : "photos"}
           </p>
         </div>
       </header>
-      <!-- GALLERY -->
+      <!-- TAGS , ACCORDION LIKE -->
+      <!-- GALLERY, INFINITE SCROLLING -->
       {
-        photos.length === 0 ? (
+        totalPhotos === 0 ? (
           <p class="text-center">No photos found for this location.</p>
         ) : (
-          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-            {photos.map((p, i) => (
-              <figure
-                class="group relative rounded-lg overflow-hidden border cursor-zoom-in
-                aspect-square focus-visible:outline-2 focus-visible:outline-offset-2 
-                focus-visible:outline-primary"
-                data-photo-idx={i}
-                tabindex="0"
-                role="button"
-                aria-label={`View ${p.data.title} in full size`}
-                aria-haspopup="dialog"
-              >
-                <img
-                  src={p.data.image.src}
-                  width={p.data.image.width}
-                  height={p.data.image.height}
-                  alt={p.data.title}
-                  class="w-full h-full block object-cover"
-                  loading="lazy"
-                />
-                {/* on hover will show picture details */}
-                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div class="absolute bottom-0 left-0 right-0 p-4 text-primary-foreground">
-                    <h3 class="text-sm font-semibold">{p.data.title}</h3>
-                    {excerptFromEntry(p) && (
-                      <p class="text-xs mt-1">{excerptFromEntry(p)}</p>
-                    )}
-                    <div class="flex flex-wrap gap-2 mt-2">
-                      {p.data.tags.map((tag: string) => (
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div class="text-xs mt-2 opacity-80">
-                      {formatDate(p.data.date)}
+          <>
+            <section
+              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10"
+              data-gallery
+              data-initial-count={initialCount}
+              data-batch-size={LOAD_BATCH_SIZE}
+              data-total-count={totalPhotos}
+            >
+              {initialPhotos.map((photo) => (
+                <figure
+                  class="group relative rounded-lg overflow-hidden border cursor-zoom-in
+                  aspect-square focus-visible:outline-2 focus-visible:outline-offset-2 
+                  focus-visible:outline-primary"
+                  data-photo-idx={photo.index}
+                  tabindex="0"
+                  role="button"
+                  aria-label={`View ${photo.title} in full size`}
+                  aria-haspopup="dialog"
+                >
+                  <img
+                    src={photo.thumbSrc}
+                    width={photo.width}
+                    height={photo.height}
+                    alt={photo.title}
+                    class="w-full h-full block object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  />
+                  <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div class="absolute bottom-0 left-0 right-0 p-4 text-primary-foreground">
+                      <h3 class="text-sm font-semibold">{photo.title}</h3>
+                      {photo.excerpt && (
+                        <p class="text-xs mt-1">{photo.excerpt}</p>
+                      )}
+                      {photo.tags.length > 0 && (
+                        <div class="flex flex-wrap gap-2 mt-2">
+                          {photo.tags.map((tag: string) => (
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div class="text-xs mt-2 opacity-80">
+                        {photo.formattedDate}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </figure>
-            ))}
-          </section>
+                </figure>
+              ))}
+            </section>
+            <div
+              class="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground"
+              data-gallery-loader
+              hidden
+            >
+              <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-muted-foreground"></span>
+              Loading more photos…
+            </div>
+            <div
+              class="mt-2 text-center text-xs uppercase tracking-wide text-muted-foreground"
+              data-gallery-complete
+              hidden
+            >
+              You've reached the end.
+            </div>
+            {initialCount < totalPhotos && (
+              <div data-gallery-sentinel class="h-1" aria-hidden="true"></div>
+            )}
+          </>
         )
       }
     </main>
-    {photos.length > 0 && (
+    <script
+      type="application/json"
+      id="photo-manifest"
+      set:html={manifestJson}
+    ></script>
+    {totalPhotos > 0 && (
       <>
         <section
           class="lightbox"
@@ -212,49 +224,11 @@ const lightboxManifest = photos.map((entry, index) => {
               </Button>
             </div>
             <span class="lightbox__counter" data-lightbox-counter aria-live="polite">
-              1 / {photos.length}
+              1 / {totalPhotos}
             </span>
           </div>
           <div class="lightbox__viewport" data-lightbox-viewport>
-            <div class="lightbox__track" data-lightbox-track>
-              {lightboxManifest.map((entry) => (
-                <article class="lightbox__slide" data-lightbox-slide>
-                  <div class="lightbox__media" data-lightbox-swipe-zone>
-                    <img
-                      data-lightbox-img
-                      src={entry.src}
-                      width={entry.width}
-                      height={entry.height}
-                      alt={`${entry.title} in ${entry.location}`}
-                      loading="eager"
-                      decoding="async"
-                      draggable="false"
-                      data-orientation={entry.orientation}
-                      style={entry.aspectRatio ? `--media-aspect: ${entry.aspectRatio}` : undefined}
-                    />
-                  </div>
-                  <div class="lightbox__details bg-secondary text-secondary-foreground shadow-2xl">
-                    <div>
-                      <p class="lightbox__location text-xs">{entry.location}</p>
-                      <h2 class="lightbox__headline text-xl font-bold">{entry.title}</h2>
-                    </div>
-                    {entry.excerpt && (
-                      <p class="lightbox__excerpt text-sm">{entry.excerpt}</p>
-                    )}
-                    <div class="lightbox__meta">
-                      <span class="lightbox__date text-xs">{entry.formattedDate}</span>
-                      {entry.tags.length > 0 && (
-                        <div class="lightbox__tags">
-                          {entry.tags.map((tag) => (
-                            <span class="lightbox__tag bg-primary text-primary-foreground">{tag}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <div class="lightbox__track" data-lightbox-track></div>
           </div>
           <Button
                 type="button"
@@ -279,10 +253,161 @@ const lightboxManifest = photos.map((entry, index) => {
         </section>
         <script type="module" is:inline>
           (() => {
-            const lightbox = document.querySelector("[data-lightbox]");
-            if (!lightbox) return;
+            const manifestEl = document.getElementById("photo-manifest");
+            if (!manifestEl) return;
+            let photos = [];
+            try {
+              photos = JSON.parse(manifestEl.textContent || "[]");
+            } catch {
+              photos = [];
+            }
+            if (!Array.isArray(photos)) {
+              photos = [];
+            }
+            const openLightbox = initLightbox(photos);
+            initGallery(photos, openLightbox);
+          })();
 
-            const triggers = document.querySelectorAll("[data-photo-idx]");
+          function initGallery(photos, openLightbox) {
+            const gallery = document.querySelector("[data-gallery]");
+            if (!gallery) return;
+            const sentinel = document.querySelector("[data-gallery-sentinel]");
+            const loader = document.querySelector("[data-gallery-loader]");
+            const complete = document.querySelector("[data-gallery-complete]");
+            const batchSize = Number(gallery.dataset.batchSize) || 12;
+            let loaded = Number(gallery.dataset.initialCount) || 0;
+            let loadingMore = false;
+            const total = Array.isArray(photos) ? photos.length : 0;
+            let observer;
+
+            const handleTrigger = (event) => {
+              const target = event.target instanceof HTMLElement
+                ? event.target.closest("[data-photo-idx]")
+                : null;
+              if (!target) return;
+              const isClick = event.type === "click";
+              const isKey = event.type === "keydown" && (event.key === "Enter" || event.key === " ");
+              if (!isClick && !isKey) return;
+              event.preventDefault();
+              const idx = Number(target.getAttribute("data-photo-idx")) || 0;
+              if (typeof openLightbox === "function") {
+                openLightbox(idx);
+              }
+            };
+
+            gallery.addEventListener("click", handleTrigger);
+            gallery.addEventListener("keydown", handleTrigger);
+
+            const appendPhotos = (start, end) => {
+              if (!Array.isArray(photos) || start >= end) return 0;
+              const fragment = document.createDocumentFragment();
+              const slice = photos.slice(start, end);
+              slice.forEach((photo) => {
+                fragment.appendChild(createFigure(photo));
+              });
+              gallery.appendChild(fragment);
+              return slice.length;
+            };
+
+            const loadMore = () => {
+              if (loadingMore || loaded >= total) return;
+              loadingMore = true;
+              loader?.removeAttribute("hidden");
+              const nextEnd = Math.min(total, loaded + batchSize);
+              const added = appendPhotos(loaded, nextEnd);
+              loaded += added;
+              loader?.setAttribute("hidden", "true");
+              loadingMore = false;
+              if (loaded >= total) {
+                complete?.removeAttribute("hidden");
+                if (sentinel) {
+                  sentinel.setAttribute("hidden", "true");
+                }
+                observer?.disconnect();
+              }
+            };
+
+            if (sentinel && loaded < total) {
+              observer = new IntersectionObserver((entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                  loadMore();
+                }
+              }, { rootMargin: "400px 0px" });
+              observer.observe(sentinel);
+            }
+
+            function createFigure(photo) {
+              if (!photo) {
+                return document.createComment("missing-photo");
+              }
+              const figure = document.createElement("figure");
+              figure.className =
+                "group relative rounded-lg overflow-hidden border cursor-zoom-in aspect-square focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+              figure.tabIndex = 0;
+              figure.dataset.photoIdx = String(photo.index ?? 0);
+              figure.setAttribute("role", "button");
+              figure.setAttribute("aria-label", `View ${photo.title ?? "photo"} in full size`);
+              figure.setAttribute("aria-haspopup", "dialog");
+
+              const img = document.createElement("img");
+              img.src = photo.thumbSrc || photo.fullSrc || "";
+              img.alt = photo.title ?? "";
+              img.loading = "lazy";
+              img.decoding = "async";
+              if (photo.width) img.width = photo.width;
+              if (photo.height) img.height = photo.height;
+              img.sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+              img.className = "w-full h-full block object-cover";
+              figure.appendChild(img);
+
+              const overlay = document.createElement("div");
+              overlay.className =
+                "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200";
+              const inner = document.createElement("div");
+              inner.className = "absolute bottom-0 left-0 right-0 p-4 text-primary-foreground";
+
+              const title = document.createElement("h3");
+              title.className = "text-sm font-semibold";
+              title.textContent = photo.title ?? "";
+              inner.appendChild(title);
+
+              if (photo.excerpt) {
+                const excerpt = document.createElement("p");
+                excerpt.className = "text-xs mt-1";
+                excerpt.textContent = photo.excerpt;
+                inner.appendChild(excerpt);
+              }
+
+              if (Array.isArray(photo.tags) && photo.tags.length > 0) {
+                const tagsWrap = document.createElement("div");
+                tagsWrap.className = "flex flex-wrap gap-2 mt-2";
+                photo.tags.forEach((tag) => {
+                  const chip = document.createElement("span");
+                  chip.className = "text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground";
+                  chip.textContent = tag;
+                  tagsWrap.appendChild(chip);
+                });
+                inner.appendChild(tagsWrap);
+              }
+
+              const date = document.createElement("div");
+              date.className = "text-xs mt-2 opacity-80";
+              date.textContent = photo.formattedDate ?? "";
+              inner.appendChild(date);
+
+              overlay.appendChild(inner);
+              figure.appendChild(overlay);
+
+              return figure;
+            }
+          }
+
+          function initLightbox(photos) {
+            const lightbox = document.querySelector("[data-lightbox]");
+            if (!lightbox || !Array.isArray(photos) || photos.length === 0) {
+              return null;
+            }
+
             const track = lightbox.querySelector("[data-lightbox-track]");
             const viewport = lightbox.querySelector("[data-lightbox-viewport]");
             const counter = lightbox.querySelector("[data-lightbox-counter]");
@@ -290,143 +415,46 @@ const lightboxManifest = photos.map((entry, index) => {
             const nextButton = lightbox.querySelector("[data-lightbox-next]");
             const prevButton = lightbox.querySelector("[data-lightbox-prev]");
             const backdrop = lightbox.querySelector("[data-lightbox-backdrop]");
-            const slides = Array.from(lightbox.querySelectorAll("[data-lightbox-slide]"));
-            const total = slides.length;
             const zoomButton = lightbox.querySelector("[data-lightbox-zoom]");
 
-            if (!track || !viewport || total === 0) return;
+            if (!track || !viewport) {
+              return null;
+            }
 
-            let current = 0;
             let lastFocused = null;
             let pointerActive = false;
             let startX = 0;
             let deltaX = 0;
 
+            const state = {
+              total: photos.length,
+              index: 0,
+              virtualized: photos.length > 3,
+              slides: [],
+              staticSlidesHydrated: false,
+              isTransitioning: false,
+            };
+
             const lockTargets = [document.documentElement, document.body];
+            const slidesToCreate = state.virtualized ? 3 : state.total;
+            for (let i = 0; i < slidesToCreate; i++) {
+              const slideRef = createSlide();
+              state.slides.push(slideRef);
+              track.appendChild(slideRef.el);
+            }
 
-            const setScrollLock = (active) => {
-              lockTargets.forEach((node) => {
-                if (node) {
-                  node.classList.toggle("lightbox-lock", active);
-                }
-              });
-            };
-
-            const updateCounter = () => {
-              if (counter) {
-                counter.textContent = `${current + 1} / ${total}`;
-              }
-            };
-
-            const applyTransform = (percent) => {
-              if (track) {
-                track.style.transform = `translateX(${percent}%)`;
-              }
-            };
-
-            const snapTo = (index, { animate = true } = {}) => {
-              current = (index + total) % total;
-              track.style.transition = animate ? "" : "none";
-              applyTransform(current * -100);
-              if (!animate) {
-                requestAnimationFrame(() => {
-                  track.style.transition = "";
-                });
-              }
-              updateCounter();
-              updateActionButtons();
-            };
-
-            const getActiveImageInfo = () => {
-              const slide = slides[current];
-              if (!slide) return null;
-              const img = slide.querySelector("[data-lightbox-img]");
-              if (!(img instanceof HTMLImageElement)) return null;
-              const rawSrc = img.getAttribute("src");
-              if (!rawSrc) return null;
-              let absoluteSrc = rawSrc;
-              try {
-                absoluteSrc = new URL(rawSrc, window.location.origin).href;
-              } catch {
-                absoluteSrc = rawSrc;
-              }
-              let fileName = "";
-              try {
-                const url = new URL(rawSrc, window.location.origin);
-                fileName = url.pathname.split("/").pop() ?? "";
-              } catch {
-                const parts = rawSrc.split("/");
-                fileName = parts[parts.length - 1] ?? "";
-              }
-              if (!fileName || !fileName.includes(".")) {
-                fileName = `photo-${current + 1}.jpg`;
-              }
-              return { src: absoluteSrc, fileName };
-            };
-
-            const updateActionButtons = () => {
-              const info = getActiveImageInfo();
-              const hasAsset = Boolean(info);
-              [zoomButton].forEach((btn) => {
-                if (!(btn instanceof HTMLButtonElement)) return;
-                btn.disabled = !hasAsset;
-                btn.setAttribute("aria-disabled", hasAsset ? "false" : "true");
-              });
-            };
-
-            updateActionButtons();
-
-            const openLightbox = (index) => {
-              lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-              lightbox.setAttribute("data-open", "true");
-              lightbox.setAttribute("aria-hidden", "false");
-              setScrollLock(true);
-              snapTo(index, { animate: false });
-              const focusTarget = lightbox.querySelector("[data-lightbox-close]");
-              if (focusTarget instanceof HTMLElement) {
-                focusTarget.focus();
-              }
-            };
-
-            const closeLightbox = () => {
-              lightbox.setAttribute("data-open", "false");
-              lightbox.setAttribute("aria-hidden", "true");
-              setScrollLock(false);
-              if (lastFocused instanceof HTMLElement) {
-                lastFocused.focus();
-              }
-            };
-
-            triggers.forEach((trigger) => {
-              trigger.addEventListener("click", () => {
-                const index = Number(trigger.getAttribute("data-photo-idx")) || 0;
-                openLightbox(index);
-              });
-              trigger.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  const index = Number(trigger.getAttribute("data-photo-idx")) || 0;
-                  openLightbox(index);
-                }
-              });
-            });
+            setCurrentIndex(0, { immediate: true });
 
             closeButtons.forEach((btn) => btn.addEventListener("click", closeLightbox));
-            if (backdrop) {
-              backdrop.addEventListener("click", closeLightbox);
-            }
-            if (nextButton) {
-              nextButton.addEventListener("click", () => snapTo(current + 1));
-            }
-            if (prevButton) {
-              prevButton.addEventListener("click", () => snapTo(current - 1));
-            }
+            backdrop?.addEventListener("click", closeLightbox);
+            nextButton?.addEventListener("click", () => animateStep(1));
+            prevButton?.addEventListener("click", () => animateStep(-1));
 
             if (zoomButton instanceof HTMLButtonElement) {
               zoomButton.addEventListener("click", () => {
-                const info = getActiveImageInfo();
-                if (!info) return;
-                window.open(info.src, "_blank", "noopener,noreferrer");
+                const active = getActivePhoto();
+                if (!active?.fullSrc) return;
+                window.open(active.fullSrc, "_blank", "noopener,noreferrer");
               });
             }
 
@@ -437,14 +465,217 @@ const lightboxManifest = photos.map((entry, index) => {
                 closeLightbox();
               } else if (event.key === "ArrowRight") {
                 event.preventDefault();
-                snapTo(current + 1);
+                animateStep(1);
               } else if (event.key === "ArrowLeft") {
                 event.preventDefault();
-                snapTo(current - 1);
+                animateStep(-1);
               }
             });
 
-            const handlePointerDown = (event) => {
+            viewport.addEventListener("pointerdown", handlePointerDown);
+            viewport.addEventListener("pointermove", handlePointerMove);
+            viewport.addEventListener("pointerup", handlePointerUp);
+            viewport.addEventListener("pointercancel", handlePointerUp);
+            viewport.addEventListener("pointerleave", (event) => {
+              if (pointerActive) handlePointerUp(event);
+            });
+
+            return openLightbox;
+
+            function openLightbox(index) {
+              lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              lightbox.setAttribute("data-open", "true");
+              lightbox.setAttribute("aria-hidden", "false");
+              setScrollLock(true);
+              setCurrentIndex(index, { immediate: true });
+              const focusTarget = lightbox.querySelector("[data-lightbox-close]");
+              if (focusTarget instanceof HTMLElement) {
+                focusTarget.focus();
+              }
+            }
+
+            function closeLightbox() {
+              lightbox.setAttribute("data-open", "false");
+              lightbox.setAttribute("aria-hidden", "true");
+              setScrollLock(false);
+              if (lastFocused instanceof HTMLElement) {
+                lastFocused.focus();
+              }
+            }
+
+            function setScrollLock(active) {
+              lockTargets.forEach((node) => {
+                if (node) {
+                  node.classList.toggle("lightbox-lock", active);
+                }
+              });
+            }
+
+            function getActivePhoto() {
+              return photos[state.index] ?? null;
+            }
+
+            function updateCounter() {
+              if (!counter) return;
+              counter.textContent = `${state.total ? state.index + 1 : 0} / ${state.total}`;
+            }
+
+            function updateActionButtons() {
+              const disableNav = state.total <= 1;
+              [nextButton, prevButton].forEach((btn) => {
+                if (!(btn instanceof HTMLButtonElement)) return;
+                btn.disabled = disableNav;
+                btn.setAttribute("aria-disabled", disableNav ? "true" : "false");
+              });
+              if (zoomButton instanceof HTMLButtonElement) {
+                const hasAsset = Boolean(getActivePhoto()?.fullSrc);
+                zoomButton.disabled = !hasAsset;
+                zoomButton.setAttribute("aria-disabled", hasAsset ? "false" : "true");
+              }
+            }
+
+            function setTrackPosition(percent, { animate = true } = {}) {
+              if (!track) return;
+              if (animate) {
+                track.style.transition = "";
+                track.style.transform = `translateX(${percent}%)`;
+                return;
+              }
+              track.style.transition = "none";
+              track.style.transform = `translateX(${percent}%)`;
+              requestAnimationFrame(() => {
+                track.style.transition = "";
+              });
+            }
+
+            function mod(value) {
+              if (!state.total) return 0;
+              const remainder = value % state.total;
+              return remainder < 0 ? remainder + state.total : remainder;
+            }
+
+            function setCurrentIndex(targetIndex, { immediate = false } = {}) {
+              if (!state.total) return;
+              state.index = mod(targetIndex);
+              if (state.virtualized) {
+                const prevIndex = mod(state.index - 1);
+                const nextIndex = mod(state.index + 1);
+                updateSlide(state.slides[0], photos[prevIndex]);
+                updateSlide(state.slides[1], photos[state.index]);
+                updateSlide(state.slides[2], photos[nextIndex]);
+                setTrackPosition(-100, { animate: !immediate });
+              } else {
+                hydrateStaticSlides();
+                setTrackPosition(-state.index * 100, { animate: !immediate });
+              }
+              updateCounter();
+              updateActionButtons();
+            }
+
+            function animateStep(direction) {
+              if (state.total <= 1) return;
+              if (state.virtualized) {
+                if (state.isTransitioning) return;
+                state.isTransitioning = true;
+                setTrackPosition(direction === 1 ? -200 : 0, { animate: true });
+                const handle = () => {
+                  track.removeEventListener("transitionend", handle);
+                  setCurrentIndex(state.index + direction, { immediate: true });
+                  setTrackPosition(-100, { animate: false });
+                  state.isTransitioning = false;
+                };
+                track.addEventListener("transitionend", handle, { once: true });
+              } else {
+                setCurrentIndex(state.index + direction);
+              }
+            }
+
+            function hydrateStaticSlides() {
+              if (state.staticSlidesHydrated) return;
+              state.slides.forEach((slideRef, idx) => {
+                updateSlide(slideRef, photos[idx]);
+              });
+              state.staticSlidesHydrated = true;
+            }
+
+            function createSlide() {
+              const article = document.createElement("article");
+              article.className = "lightbox__slide";
+              article.setAttribute("data-lightbox-slide", "");
+
+              const media = document.createElement("div");
+              media.className = "lightbox__media";
+              media.setAttribute("data-lightbox-swipe-zone", "");
+              const img = document.createElement("img");
+              img.setAttribute("data-lightbox-img", "");
+              img.loading = "lazy";
+              img.decoding = "async";
+              img.draggable = false;
+              media.appendChild(img);
+
+              const details = document.createElement("div");
+              details.className = "lightbox__details bg-secondary text-secondary-foreground shadow-2xl";
+              const header = document.createElement("div");
+              const location = document.createElement("p");
+              location.className = "lightbox__location text-xs";
+              const title = document.createElement("h2");
+              title.className = "lightbox__headline text-xl font-bold";
+              header.append(location, title);
+
+              const excerpt = document.createElement("p");
+              excerpt.className = "lightbox__excerpt text-sm";
+              excerpt.hidden = true;
+
+              const meta = document.createElement("div");
+              meta.className = "lightbox__meta";
+              const date = document.createElement("span");
+              date.className = "lightbox__date text-xs";
+              const tags = document.createElement("div");
+              tags.className = "lightbox__tags";
+              meta.append(date, tags);
+
+              details.append(header, excerpt, meta);
+              article.append(media, details);
+
+              return { el: article, img, location, title, excerpt, date, tags };
+            }
+
+            function updateSlide(slideRef, photo) {
+              if (!slideRef || !photo) return;
+              slideRef.el.dataset.photoIdx = String(photo.index ?? 0);
+              slideRef.img.src = photo.fullSrc || photo.thumbSrc || "";
+              slideRef.img.alt = `${photo.title ?? "Photo"}${photo.location ? ` in ${photo.location}` : ""}`;
+              slideRef.img.dataset.orientation = photo.orientation ?? "landscape";
+              if (photo.aspectRatio) {
+                slideRef.img.style.setProperty("--media-aspect", photo.aspectRatio);
+              } else {
+                slideRef.img.style.removeProperty("--media-aspect");
+              }
+              slideRef.location.textContent = photo.location ?? "";
+              slideRef.title.textContent = photo.title ?? "";
+              if (photo.excerpt) {
+                slideRef.excerpt.textContent = photo.excerpt;
+                slideRef.excerpt.hidden = false;
+              } else {
+                slideRef.excerpt.textContent = "";
+                slideRef.excerpt.hidden = true;
+              }
+              slideRef.date.textContent = photo.formattedDate ?? "";
+              slideRef.tags.innerHTML = "";
+              if (Array.isArray(photo.tags) && photo.tags.length > 0) {
+                slideRef.tags.hidden = false;
+                photo.tags.forEach((tag) => {
+                  const chip = document.createElement("span");
+                  chip.className = "lightbox__tag bg-primary text-primary-foreground";
+                  chip.textContent = tag;
+                  slideRef.tags.appendChild(chip);
+                });
+              } else {
+                slideRef.tags.hidden = true;
+              }
+            }
+
+            function handlePointerDown(event) {
               if (event.pointerType === "mouse" && event.button !== 0) return;
               const origin = event.target instanceof HTMLElement
                 ? event.target.closest("[data-lightbox-img], [data-lightbox-swipe-zone]")
@@ -455,41 +686,31 @@ const lightboxManifest = photos.map((entry, index) => {
               startX = event.clientX;
               deltaX = 0;
               track.style.transition = "none";
-              if (typeof viewport.setPointerCapture === "function") {
-                viewport.setPointerCapture(event.pointerId);
-              }
-            };
+              viewport.setPointerCapture?.(event.pointerId);
+            }
 
-            const handlePointerMove = (event) => {
+            function handlePointerMove(event) {
               if (!pointerActive) return;
               deltaX = event.clientX - startX;
-              const deltaPercent = viewport.clientWidth ? (deltaX / viewport.clientWidth) * 100 : 0;
-              applyTransform((-current * 100) + deltaPercent);
-            };
+              const width = viewport.clientWidth || 1;
+              const deltaPercent = (deltaX / width) * 100;
+              const base = state.virtualized ? -100 : -state.index * 100;
+              setTrackPosition(base + deltaPercent, { animate: false });
+            }
 
-            const handlePointerUp = (event) => {
+            function handlePointerUp(event) {
               if (!pointerActive) return;
               pointerActive = false;
-              if (event && typeof viewport.releasePointerCapture === "function") {
-                viewport.releasePointerCapture(event.pointerId);
-              }
-              track.style.transition = "";
-              const threshold = viewport.clientWidth ? viewport.clientWidth * 0.15 : 0;
+              viewport.releasePointerCapture?.(event.pointerId);
+              const threshold = (viewport.clientWidth || 1) * 0.15;
               if (Math.abs(deltaX) > threshold) {
-                snapTo(deltaX > 0 ? current - 1 : current + 1);
+                animateStep(deltaX > 0 ? -1 : 1);
               } else {
-                applyTransform(current * -100);
+                const base = state.virtualized ? -100 : -state.index * 100;
+                setTrackPosition(base, { animate: true });
               }
-            };
-
-            viewport.addEventListener("pointerdown", handlePointerDown);
-            viewport.addEventListener("pointermove", handlePointerMove);
-            viewport.addEventListener("pointerup", handlePointerUp);
-            viewport.addEventListener("pointercancel", handlePointerUp);
-            viewport.addEventListener("pointerleave", (event) => {
-              if (pointerActive) handlePointerUp(event);
-            });
-          })();
+            }
+          }
         </script>
       </>
     )}

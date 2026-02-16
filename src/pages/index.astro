@@ -3,11 +3,9 @@ import Layout from "./layout.astro";
 import { Button } from "@/components/ui/button";
 import { BookSearch, MapPin } from "lucide-react";
 
-import { getCollection } from "astro:content";
-import { groupPhotosByLocation } from "@/lib/photos";
+import { getAllMetadata } from "@/lib/metadata";
 
-const photos = await getCollection("photos");
-const locations = groupPhotosByLocation(photos);
+const locations = getAllMetadata();
 ---
 
 <Layout>
@@ -30,12 +28,12 @@ const locations = groupPhotosByLocation(photos);
   <body>
     <!-- Cities gallery/pick -->
     <section
-      class="grid grid-cols-1 gap-6 p-6 transition-all sm:grid-cols-2 sm:px-96 sm:py-16"
+      class="grid grid-cols-1 gap-6 p-6 transition-all sm:grid-cols-2 lg:px-48 xl:px-96 sm:py-16"
     >
       {
         locations.map((loc) => (
           <a
-            href={loc.slug}
+            href={`/${loc.city}`}
             class="rounded-xl border p-6 shadow-md backdrop-blur-sm transition hover:shadow-xl"
           >
             <div class="mb-3 flex items-start justify-between">
@@ -51,8 +49,8 @@ const locations = groupPhotosByLocation(photos);
               </div>
             </div>
 
-            <div class="text-foreground flex items-center text-sm">
-              <MapPin class="mr-1 h-4 w-4" />
+            <div class="text-foreground flex items-center">
+              <MapPin className="mr-1 h-4 w-4" />
               <h2 class="text-md ml-1 font-semibold capitalize lg:text-xl">
                 {loc.city}, {loc.country}
               </h2>

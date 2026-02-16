@@ -1,6 +1,6 @@
 import type { CollectionEntry } from "astro:content";
 import { getCollection } from "astro:content";
-import { getLocationFromSlug, normalizeSegment } from "./slug";
+import { getMetadataFromSlug } from "./metadata";
 
 type Photo = CollectionEntry<"photos">;
 
@@ -12,49 +12,12 @@ export interface LocationGroup {
   flag: string | null;
 }
 
-const countryCodeDict = {
-  indonesia: "ID",
-  china: "CN",
-  italy: "IT",
-  hungary: "HU",
-  czech: "CZ",
-  austria: "AT",
-};
-
-export function getCountryFlag(input: string): string | null {
-  if (!input) return null;
-
-  const trimmed = input.trim();
-  const key = trimmed.toLowerCase();
-
-  // If input is a country name (case-insensitive)
-  if (key in countryCodeDict) {
-    const code = countryCodeDict[key as keyof typeof countryCodeDict];
-    return (
-      "https://flagicons.lipis.dev/flags/4x3/" + code.toLowerCase() + ".svg"
-    );
-  }
-
-  // If input is a country code (e.g., "CN", "ID")
-  const codeCandidate = trimmed.toUpperCase();
-  const values = Object.values(countryCodeDict);
-  if (values.includes(codeCandidate)) {
-    return (
-      "https://flagicons.lipis.dev/flags/4x3/" +
-      codeCandidate.toLowerCase() +
-      ".svg"
-    );
-  }
-
-  // Input is neither a known country name nor a valid code
-  return null;
-}
 
 export function groupPhotosByLocation(photos: Photo[]): LocationGroup[] {
   const map = new Map<string, LocationGroup>();
 
   for (const photo of photos) {
-    const { country, city } = getLocationFromSlug(photo.slug);
+    const { country, city, flag } = getMetadataFromSlug(photo.slug);
     const key = `${country}/${city}`;
 
     if (!map.has(key)) {
@@ -63,7 +26,7 @@ export function groupPhotosByLocation(photos: Photo[]): LocationGroup[] {
         city,
         slug: city.toLowerCase(),
         count: 0,
-        flag: getCountryFlag(country),
+        flag: flag ?? null,
       });
     }
 
@@ -83,28 +46,30 @@ export function groupPhotosByLocation(photos: Photo[]): LocationGroup[] {
 export function photosByCity(
   photos: Photo[],
   city: string,
-  country?: string,
-): Photo[] {
-  const targetCity = normalizeSegment(city);
-  const targetCountry = country ? normalizeSegment(country) : undefined;
+  tags?: string[]
 
-  return photos
+): Photo[] {
+
+  photos = photos
     .filter((p) => {
-      const { country: ctry, city: cty } = getLocationFromSlug(p.slug);
-      if (cty !== targetCity) return false;
-      if (targetCountry && ctry !== targetCountry) return false;
+      const { city: cty } = getMetadataFromSlug(p.slug);
+      if (cty !== city) return false;
       return true;
     })
+
+  if (tags) {
+    // return the first tag that matches with whatever tags user wants.
+    photos = photos.filter((p) => p.data.tags.some((el) => tags.includes(el)))
+  }
+
+  return photos
     .sort((a, b) => String(b.data.date).localeCompare(String(a.data.date)));
 }
 
-/**
- * Fetch and return all photos for a city (and optional country) from the content collection.
- */
 export async function getPhotosByCity(
   city: string,
-  country?: string,
+  tags?: string[]
 ): Promise<Photo[]> {
   const all = await getCollection("photos");
-  return photosByCity(all, city, country);
+  return photosByCity(all, city, tags);
 }
