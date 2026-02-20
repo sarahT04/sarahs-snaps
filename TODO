@@ -1,2 +1,2 @@
 # TODO 2
-Create a Python Script that can autogenerate mdx, put it into the respective folder and ID then upload the picture to API
+ that can upload pictures and put tags, upload pictures and thumbnail to imagekit, create an mdx from it, bulk commit it to github, put it into the respective folder and ID then upload the picture to API

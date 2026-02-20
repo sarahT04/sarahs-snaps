@@ -1,0 +1,96 @@
+---
+import Layout from "./layout.astro";
+
+const session = Astro.locals.session;
+const user = Astro.locals.user;
+---
+
+<Layout>
+  {!session ? (
+    <div class="flex flex-col items-center justify-center min-h-screen">
+      <h1 class="text-3xl font-bold mb-8">Admin Login</h1>
+      <button 
+        id="login" 
+        class="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        <svg id="login-spinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span id="login-text">Login with GitHub</span>
+      </button>
+    </div>
+  ) : (
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-2">
+            Welcome back, {user?.name || user?.email}!
+          </p>
+        </div>
+        <button 
+          id="logout" 
+          class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Logout
+        </button>
+      </div>
+      
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div class="p-6 border rounded-lg">
+          <h2 class="text-xl font-semibold mb-2">Photo Management</h2>
+          <p class="text-gray-600 dark:text-gray-400">Upload and manage your photos</p>
+        </div>
+        <div class="p-6 border rounded-lg">
+          <h2 class="text-xl font-semibold mb-2">Collections</h2>
+          <p class="text-gray-600 dark:text-gray-400">Organize photos into collections</p>
+        </div>
+        <div class="p-6 border rounded-lg">
+          <h2 class="text-xl font-semibold mb-2">Settings</h2>
+          <p class="text-gray-600 dark:text-gray-400">Configure your portfolio</p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <script>
+    import { signIn, authClient } from "../lib/auth-client"
+    
+    const loginBtn = document.querySelector("#login") as HTMLButtonElement
+    const loginSpinner = document.querySelector("#login-spinner")
+    const loginText = document.querySelector("#login-text")
+    const logoutBtn = document.querySelector("#logout")
+    
+    if (loginBtn) {
+      loginBtn.addEventListener("click", async () => {
+        // Set loading state
+        loginBtn.disabled = true
+        loginSpinner?.classList.remove("hidden")
+        if (loginText) loginText.textContent = "Logging in..."
+        
+        try {
+          await signIn();
+        } catch (error) {
+          // Reset button state on error
+          loginBtn.disabled = false
+          loginSpinner?.classList.add("hidden")
+          if (loginText) loginText.textContent = "Login with GitHub"
+          console.error("Login failed:", error)
+        }
+      })
+    }
+    
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", async () => {
+        await authClient.signOut({
+          fetchOptions: {
+            onSuccess: () => {
+              window.location.href = "/admin"
+            }
+          }
+        })
+      })
+    }
+  </script>
+</Layout>

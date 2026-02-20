@@ -8,6 +8,8 @@ import { CircleX, ArrowLeft, ArrowRight, ZoomIn } from "lucide-react";
 import { getAllMetadata } from "@/lib/metadata";
 import { formatDate } from "@/lib/utils";
 
+export const prerender = true;
+
 const INITIAL_BATCH_SIZE = 24;
 const LOAD_BATCH_SIZE = 24;
 
@@ -26,7 +28,7 @@ if (photos.length === 0) {
   throw new Response("Not found", { status: 404 });
 }
 
-const { country, flag, title: locationLabel, code, count } = getMetadataFromSlug(city);
+const { country, flag, title: locationLabel, count } = getMetadataFromSlug(city);
 
 
 function excerptFromEntry(entry: any) {
