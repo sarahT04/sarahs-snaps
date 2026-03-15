@@ -1,11 +1,10 @@
 ---
 import "@/styles/lightbox.css"
 import Layout from "./layout.astro";
-import { getPhotosByCity, groupPhotosByLocation } from "@/lib/photos";
+import { getPhotosByCity } from "@/lib/photos";
 import { getMetadataFromSlug } from "@/lib/metadata";
 import { Button } from "@/components/ui/button";
 import { CircleX, ArrowLeft, ArrowRight, ZoomIn } from "lucide-react";
-import { getAllMetadata } from "@/lib/metadata";
 import { formatDate } from "@/lib/utils";
 
 export const prerender = false;
@@ -517,7 +516,7 @@ const manifestJson = JSON.stringify(serializedPhotos).replace(/</g, "\\u003c");
             }
 
             function updateActionButtons() {
-              const disableNav = state.total <= 1;
+              const disableNav = state.total <= 1 || state.isTransitioning;
               [nextButton, prevButton].forEach((btn) => {
                 if (!(btn instanceof HTMLButtonElement)) return;
                 btn.disabled = disableNav;
@@ -539,9 +538,6 @@ const manifestJson = JSON.stringify(serializedPhotos).replace(/</g, "\\u003c");
               }
               track.style.transition = "none";
               track.style.transform = `translateX(${percent}%)`;
-              requestAnimationFrame(() => {
-                track.style.transition = "";
-              });
             }
 
             function mod(value) {
@@ -573,14 +569,21 @@ const manifestJson = JSON.stringify(serializedPhotos).replace(/</g, "\\u003c");
               if (state.virtualized) {
                 if (state.isTransitioning) return;
                 state.isTransitioning = true;
+                updateActionButtons();
                 setTrackPosition(direction === 1 ? -200 : 0, { animate: true });
-                const handle = () => {
+                const handle = (event) => {
+                  if (event.target !== track || event.propertyName !== "transform") {
+                    return;
+                  }
                   track.removeEventListener("transitionend", handle);
-                  setCurrentIndex(state.index + direction, { immediate: true });
+                  // Recenter first while slides still reflect the pre-shift state,
+                  // then remap slide contents to avoid visible bounce-back.
                   setTrackPosition(-100, { animate: false });
+                  setCurrentIndex(state.index + direction, { immediate: true });
                   state.isTransitioning = false;
+                  updateActionButtons();
                 };
-                track.addEventListener("transitionend", handle, { once: true });
+                track.addEventListener("transitionend", handle);
               } else {
                 setCurrentIndex(state.index + direction);
               }

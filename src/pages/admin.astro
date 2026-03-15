@@ -369,8 +369,6 @@ const cityMetadata = getAllMetadata();
         formData.append("files", item.file, item.file.name);
       }
 
-      console.log("formData:", formData, payload);
-
       const response = await fetch("/api/imagekit/upload", {
         method: "POST",
         body: formData,

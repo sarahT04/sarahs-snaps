@@ -16,7 +16,7 @@ const getGithubConfig = (): GithubConfig => {
   const token = import.meta.env.GITHUB_TOKEN;
   const owner = import.meta.env.GITHUB_OWNER;
   const repo = import.meta.env.GITHUB_REPO;
-  const branch = import.meta.env.GITHUB_BRANCH || "main";
+  const branch = import.meta.env.GITHUB_BRANCH || "master";
 
   if (!token || !owner || !repo) {
     throw new Error("Missing GitHub config. Required: GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO");
