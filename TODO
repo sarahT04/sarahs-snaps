@@ -1,2 +1,8 @@
 # TODO 2
  that can upload pictures and put tags, upload pictures and thumbnail to imagekit, create an mdx from it, bulk commit it to github, put it into the respective folder and ID then upload the picture to API
+
+# TODO 2.8
+API part: thumbnail + create mdx from form.
+
+# TODO 2.9
+API: upload thumbnail and pics . if not fail, commit made mdx to git.

@@ -3,482 +3,804 @@ import Layout from "./layout.astro";
 import { getAllMetadata } from "../lib/metadata";
 
 const session = Astro.locals.session;
-const user = Astro.locals.user;
 const cityMetadata = getAllMetadata();
 ---
 
 <Layout>
-  {!session ? (
-    <div class="flex flex-col items-center justify-center min-h-screen">
-      <h1 class="text-3xl font-bold mb-8">Admin Login</h1>
-      <button 
-        id="login" 
-        class="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-      >
-        <svg id="login-spinner" class="hidden animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span id="login-text">Login with GitHub</span>
-      </button>
-    </div>
-  ) : (
-    <div class="container mx-auto px-28">
-      <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-3">
-        <h1 class="text-3xl font-bold">Upload Pictures</h1>
-        <button 
-          id="logout" 
-          class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+  {
+    !session ? (
+      <div class="flex min-h-screen flex-col items-center justify-center">
+        <h1 class="mb-8 text-3xl font-bold">Admin Login</h1>
+        <button
+          id="login"
+          class="flex items-center gap-2 rounded-lg bg-black px-6 py-3 text-white transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black"
         >
-          Logout
+          <svg
+            id="login-spinner"
+            class="hidden h-5 w-5 animate-spin"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span id="login-text">Login with GitHub</span>
         </button>
       </div>
-      <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div class="p-6 border rounded-lg">
-          <div class="grid gap-4 md:grid-cols-2">
-            <div>
-              <label class="block text-sm font-medium mb-2" for="photo-files">Select Photos</label>
-              <input
-                id="photo-files"
-                type="file"
-                accept="image/*"
-                multiple
-                class="w-full rounded-md border px-3 py-2 bg-secondary"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-2" for="city-select">City</label>
-              <select id="city-select" class="w-full rounded-md border px-3 py-2 appearance-none bg-secondary">
-                <option class="bg-secondary" value="">Select a city</option>
-                {cityMetadata.map((city) => (
-                  <option value={city.city}>{city.title} ({city.count})</option>
-                ))}
-              </select>
-              <p id="city-error" class="text-red-500 text-sm mt-1 hidden">Please select a city</p>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <div class="flex items-center justify-between mb-3">
-              <h2 class="text-lg font-semibold">Preview</h2>
-              <span id="preview-count" class="text-sm text-gray-600 dark:text-gray-400">0 / 0</span>
-            </div>
-            <div class="flex items-center justify-between mt-4 mb-4">
-              <button
-                id="prev-photo"
-                class="px-4 py-2 rounded-md border hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                disabled
-              >
-                Prev
-              </button>
-              <div id="preview-name" class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[60%]"></div>
-              <button
-                id="next-photo"
-                class="px-4 py-2 rounded-md border hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                disabled
-              >
-                Next
-              </button>
-            </div>
-            <div class="aspect-4/3 w-full bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
-              <img
-                id="preview-image"
-                src=""
-                alt="Preview"
-                class="max-h-full max-w-full object-contain hidden"
-              />
-              <p id="preview-empty" class="text-sm text-gray-500">Select photos to preview</p>
-            </div>
-          </div>
+    ) : (
+      <div class="container mx-auto md:px-20 lg:px-28">
+        <div class="mb-3 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <h1 class="text-3xl font-bold">Upload Pictures</h1>
+          <button
+            id="logout"
+            class="rounded-lg bg-red-600 w-fit m-auto md:m-0  px-6 py-3 text-white transition-colors hover:bg-red-700"
+          >
+            Logout
+          </button>
         </div>
+        <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div class="rounded-lg border p-6">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-sm font-medium" for="photo-files">
+                  Select Photos
+                </label>
+                <input
+                  id="photo-files"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  class="bg-secondary w-full rounded-md border px-3 py-2"
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium" for="city-select">
+                  City
+                </label>
+                <select
+                  id="city-select"
+                  class="bg-secondary w-full appearance-none rounded-md border px-3 py-2"
+                >
+                  <option class="bg-secondary" value="">
+                    Select a city
+                  </option>
+                  {cityMetadata.map((city) => (
+                    <option value={city.city}>
+                      {city.title} ({city.count})
+                    </option>
+                  ))}
+                </select>
+                <p id="city-error" class="mt-1 hidden text-sm text-red-500">
+                  Please select a city
+                </p>
+              </div>
+            </div>
 
-        <div class="p-6 border rounded-lg">
-          <h2 class="text-lg font-semibold mb-4">Metadata</h2>
-          <form id="metadata-form" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium mb-2" for="meta-id">File name</label>
-              <input id="meta-id" type="text" class="w-full rounded-md border px-3 py-2 bg-transparent cursor-no-drop disabled:text-gray-500" disabled />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-2" for="meta-title">Title</label>
-              <input id="meta-title" type="text" class="w-full rounded-md border px-3 py-2 bg-transparent" />
-            </div>
-            <div class="flex flex-row gap-4 md:grid-cols-2">
-              <div class="flex-2">
-                <label class="block text-sm font-medium mb-1 mt-1" for="meta-width">Width</label>
-                <input id="meta-width" type="number" min="0" class="w-full rounded-md border px-3 py-2 bg-transparent cursor-no-drop disabled:text-gray-500" disabled />
-                <label class="block text-sm font-medium mb-1 mt-1" for="meta-height">Height</label>
-                <input id="meta-height" type="number" min="0" class="w-full rounded-md border px-3 py-2 bg-transparent cursor-no-drop disabled:text-gray-500" disabled />
+            <div class="mt-6">
+              <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Preview</h2>
+                <span
+                  id="preview-count"
+                  class="text-sm text-gray-600 dark:text-gray-400"
+                >
+                  0 / 0
+                </span>
               </div>
-              <div class="grow shrink-0">
-                <label class="block text-sm font-medium mb-2" for="meta-tags">Tags (comma separated, optional)</label>
-                <textarea
-                  id="meta-tags"
-                  rows="4"
-                  class="w-full rounded-md border px-3 py-2 bg-transparent block box-border resize-none"
-                ></textarea>
+              <div class="mt-4 mb-4 flex items-center justify-between">
+                <button
+                  id="prev-photo"
+                  class="rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-gray-800"
+                  disabled
+                >
+                  Prev
+                </button>
+                <div
+                  id="preview-name"
+                  class="max-w-[60%] truncate text-sm text-gray-600 dark:text-gray-400"
+                />
+                <button
+                  id="next-photo"
+                  class="rounded-md border px-4 py-2 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-gray-800"
+                  disabled
+                >
+                  Next
+                </button>
+              </div>
+              <div class="flex aspect-4/3 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-900">
+                <img
+                  id="preview-image"
+                  src=""
+                  alt="Preview"
+                  class="hidden max-h-full max-w-full object-contain"
+                />
+                <p id="preview-empty" class="text-sm text-gray-500">
+                  Select photos to preview
+                </p>
               </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium mb-2" for="meta-date">Date</label>
-              <input id="meta-date" type="date" class="w-full rounded-md border px-3 py-2 bg-transparent" />
-            </div>
-           <div>
-              <label class="block text-sm font-medium mb-2" for="meta-description">Description (optional)</label>
-              <input id="meta-description" type="text" class="w-full rounded-md border px-3 py-2 bg-transparent" placeholder="No description was provided for this picture." />
-            </div>
-             <div class="pt-4 border-t flex items-center justify-between gap-3">
-              <button
-                id="queue-btn"
-                type="button"
-                class="px-5 py-2 rounded-md border hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                disabled
-              >
-                Queue
-              </button>
-              <button
-                id="upload-all"
-                type="button"
-                class="px-5 py-2 rounded-md bg-black dark:bg-white text-white dark:text-black hover:opacity-80 disabled:opacity-50"
-                disabled
-              >
-                Upload All
-              </button>
-            </div>
-            <div class="mt-3 pt-3">
-            <h3 class="text-sm font-semibold mb-2">Queue</h3>
-            <ul id="queue-list" class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li class="text-gray-500">No queued photos</li>
-            </ul>
           </div>
-          </form>
+
+          <div class="rounded-lg border p-6">
+            <h2 class="mb-4 text-lg font-semibold">Metadata</h2>
+            <form
+              id="metadata-form"
+              class="space-y-4"
+              onsubmit="uploadPictures()"
+            >
+              <div>
+                <label class="mb-2 block text-sm font-medium" for="meta-id">
+                  File name
+                </label>
+                <input
+                  id="meta-id"
+                  type="text"
+                  class="w-full cursor-no-drop rounded-md border bg-transparent px-3 py-2 disabled:text-gray-500"
+                  disabled
+                />
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium" for="meta-title">
+                  Title
+                </label>
+                <input
+                  id="meta-title"
+                  type="text"
+                  class="w-full rounded-md border bg-transparent px-3 py-2"
+                />
+              </div>
+              <div class="flex flex-row gap-4 md:grid-cols-2">
+                <div class="flex-2">
+                  <label
+                    class="mt-1 mb-1 block text-sm font-medium"
+                    for="meta-width"
+                  >
+                    Width
+                  </label>
+                  <input
+                    id="meta-width"
+                    type="number"
+                    min="0"
+                    class="w-full cursor-no-drop rounded-md border bg-transparent px-3 py-2 disabled:text-gray-500"
+                    disabled
+                  />
+                  <label
+                    class="mt-1 mb-1 block text-sm font-medium"
+                    for="meta-height"
+                  >
+                    Height
+                  </label>
+                  <input
+                    id="meta-height"
+                    type="number"
+                    min="0"
+                    class="w-full cursor-no-drop rounded-md border bg-transparent px-3 py-2 disabled:text-gray-500"
+                    disabled
+                  />
+                </div>
+                <div class="shrink-0 grow">
+                  <label class="mb-2 block text-sm font-medium" for="meta-tags">
+                    Tags (comma separated, optional)
+                  </label>
+                  <textarea
+                    id="meta-tags"
+                    rows="4"
+                    class="box-border block w-full resize-none rounded-md border bg-transparent px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="mb-2 block text-sm font-medium" for="meta-date">
+                  Date
+                </label>
+                <input
+                  id="meta-date"
+                  type="date"
+                  class="w-full rounded-md border bg-transparent px-3 py-2"
+                />
+              </div>
+              <div>
+                <label
+                  class="mb-2 block text-sm font-medium"
+                  for="meta-description"
+                >
+                  Description (optional)
+                </label>
+                <input
+                  id="meta-description"
+                  type="text"
+                  class="w-full rounded-md border bg-transparent px-3 py-2"
+                  placeholder="No description was provided for this picture."
+                />
+              </div>
+              <div class="flex items-center justify-between gap-3 border-t pt-4">
+                <button
+                  id="queue-btn"
+                  type="button"
+                  class="rounded-md border px-5 py-2 hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-gray-800"
+                  disabled
+                >
+                  Queue
+                </button>
+                <button
+                  id="upload-all"
+                  type="button"
+                  class="rounded-md bg-black px-5 py-2 text-white hover:opacity-80 disabled:opacity-50 dark:bg-white dark:text-black"
+                  disabled
+                >
+                  Upload All
+                </button>
+              </div>
+              <div class="mt-3 pt-3">
+                <h3 class="mb-2 text-sm font-semibold">Queue</h3>
+                <ul
+                  id="queue-list"
+                  class="space-y-1 text-sm text-gray-600 dark:text-gray-400"
+                >
+                  <li class="text-gray-500">No queued photos</li>
+                </ul>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
-  )}
+    )
+  }
 
   <script>
-    import { capitalizeString } from "@/lib/utils"
-import { signIn, authClient } from "../lib/auth-client"
-    
-    const loginBtn = document.querySelector("#login") as HTMLButtonElement
-    const loginSpinner = document.querySelector("#login-spinner")
-    const loginText = document.querySelector("#login-text")
-    const logoutBtn = document.querySelector("#logout")
-    const filesInput = document.querySelector("#photo-files") as HTMLInputElement | null
-    const citySelect = document.querySelector("#city-select") as HTMLSelectElement | null
-    const previewImage = document.querySelector("#preview-image") as HTMLImageElement | null
-    const previewEmpty = document.querySelector("#preview-empty") as HTMLParagraphElement | null
-    const previewCount = document.querySelector("#preview-count") as HTMLSpanElement | null
-    const previewName = document.querySelector("#preview-name") as HTMLDivElement | null
-    const prevPhotoBtn = document.querySelector("#prev-photo") as HTMLButtonElement | null
-    const nextPhotoBtn = document.querySelector("#next-photo") as HTMLButtonElement | null
-    const queueList = document.querySelector("#queue-list") as HTMLUListElement | null
-    const queueBtn = document.querySelector("#queue-btn") as HTMLButtonElement | null
-    const uploadAllBtn = document.querySelector("#upload-all") as HTMLButtonElement | null
-    const cityError = document.querySelector("#city-error") as HTMLParagraphElement | null
+    import exifr from "exifr";
+    import { capitalizeString } from "@/lib/utils";
+    import { signIn, authClient } from "../lib/auth-client";
 
-    const metaId = document.querySelector("#meta-id") as HTMLInputElement | null
-    const metaTitle = document.querySelector("#meta-title") as HTMLInputElement | null
-    const metaTags = document.querySelector("#meta-tags") as HTMLInputElement | null
-    const metaDate = document.querySelector("#meta-date") as HTMLInputElement | null
-    const metaWidth = document.querySelector("#meta-width") as HTMLInputElement | null
-    const metaHeight = document.querySelector("#meta-height") as HTMLInputElement | null
-    const metaDescription = document.querySelector("#meta-description") as HTMLInputElement | null
+    const loginBtn = document.querySelector("#login") as HTMLButtonElement;
+    const loginSpinner = document.querySelector("#login-spinner");
+    const loginText = document.querySelector("#login-text");
+    const logoutBtn = document.querySelector("#logout");
+    const filesInput = document.querySelector(
+      "#photo-files",
+    ) as HTMLInputElement | null;
+    const citySelect = document.querySelector(
+      "#city-select",
+    ) as HTMLSelectElement | null;
+    const previewImage = document.querySelector(
+      "#preview-image",
+    ) as HTMLImageElement | null;
+    const previewEmpty = document.querySelector(
+      "#preview-empty",
+    ) as HTMLParagraphElement | null;
+    const previewCount = document.querySelector(
+      "#preview-count",
+    ) as HTMLSpanElement | null;
+    const previewName = document.querySelector(
+      "#preview-name",
+    ) as HTMLDivElement | null;
+    const prevPhotoBtn = document.querySelector(
+      "#prev-photo",
+    ) as HTMLButtonElement | null;
+    const nextPhotoBtn = document.querySelector(
+      "#next-photo",
+    ) as HTMLButtonElement | null;
+    const queueList = document.querySelector(
+      "#queue-list",
+    ) as HTMLUListElement | null;
+    const queueBtn = document.querySelector(
+      "#queue-btn",
+    ) as HTMLButtonElement | null;
+    const uploadAllBtn = document.querySelector(
+      "#upload-all",
+    ) as HTMLButtonElement | null;
+    const cityError = document.querySelector(
+      "#city-error",
+    ) as HTMLParagraphElement | null;
+
+    const metaId = document.querySelector(
+      "#meta-id",
+    ) as HTMLInputElement | null;
+    const metaTitle = document.querySelector(
+      "#meta-title",
+    ) as HTMLInputElement | null;
+    const metaTags = document.querySelector(
+      "#meta-tags",
+    ) as HTMLInputElement | null;
+    const metaDate = document.querySelector(
+      "#meta-date",
+    ) as HTMLInputElement | null;
+    const metaWidth = document.querySelector(
+      "#meta-width",
+    ) as HTMLInputElement | null;
+    const metaHeight = document.querySelector(
+      "#meta-height",
+    ) as HTMLInputElement | null;
+    const metaDescription = document.querySelector(
+      "#meta-description",
+    ) as HTMLInputElement | null;
 
     type PhotoMeta = {
-      id: string
-      city: string
-      title: string
-      tags?: string[]
-      date: string
-      description?: string
+      id: string;
+      city: string;
+      title: string;
+      tags?: string[];
+      date: string;
+      description?: string;
       image: {
-        src: string
-        width: number
-        height: number
-        thumbnail?: { src: string }
-      }
-    }
+        src: string;
+        width: number;
+        height: number;
+        thumbnail?: { src: string };
+      };
+    };
 
     type PhotoDraft = {
-      file: File
-      previewUrl: string
-      meta: PhotoMeta
-    }
+      file: File;
+      previewUrl: string;
+      meta: PhotoMeta;
+    };
 
     type QueueItem = {
-      file: File
-      meta: PhotoMeta
-    }
+      file: File;
+      meta: PhotoMeta;
+    };
 
-    let drafts: PhotoDraft[] = []
-    let queue: QueueItem[] = []
-    let currentIndex = 0
+    let drafts: PhotoDraft[] = [];
+    let queue: QueueItem[] = [];
+    let currentIndex = 0;
+    let lastSelectedCity = "";
 
-    const mockUploadApi = async (payload: QueueItem[]) => {
-      console.log(payload)
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      return { ok: true, uploaded: payload.length }
-    }
+    const uploadAllPhotos = async (payload: QueueItem[]) => {
+      const formData = new FormData();
+      const queuePayload = payload.map((item) => ({
+        clientFileName: item.file.name,
+        meta: item.meta,
+      }));
 
-    const setMetaForm = (meta: PhotoMeta) => {
-      if (!metaId || !metaTitle || !metaTags || !metaDate || !metaWidth || !metaHeight || !metaDescription || !citySelect) {
-        return
+      formData.append("queue", JSON.stringify(queuePayload));
+      for (const item of payload) {
+        formData.append("files", item.file, item.file.name);
       }
-      metaId.value = meta.id
-      metaTitle.value = meta.title
-      metaTags.value = (meta.tags ?? []).join(", ")
-      metaDate.value = meta.date
-      metaWidth.value = meta.image.width ? String(meta.image.width) : ""
-      metaHeight.value = meta.image.height ? String(meta.image.height) : ""
-      metaDescription.value = meta.description ?? ""
-      citySelect.value = meta.city
-    }
+
+      console.log("formData:", formData, payload);
+
+      const response = await fetch("/api/imagekit/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || "Upload request failed");
+      }
+
+      return result;
+    };
+
+    const formatDateForInput = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+
+    const normalizeExifDate = (value: unknown) => {
+      if (!value) return undefined;
+
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return formatDateForInput(value);
+      }
+
+      if (typeof value === "string") {
+        const exifDateMatch = value.match(/^(\d{4}):(\d{2}):(\d{2})/);
+        if (exifDateMatch) {
+          return `${exifDateMatch[1]}-${exifDateMatch[2]}-${exifDateMatch[3]}`;
+        }
+
+        const parsedDate = new Date(value);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          return formatDateForInput(parsedDate);
+        }
+      }
+
+      if (typeof value === "number") {
+        const parsedDate = new Date(value);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          return formatDateForInput(parsedDate);
+        }
+      }
+
+      return undefined;
+    };
+
+    const getPhotoTakenDate = async (file: File) => {
+      try {
+        const exifData = (await exifr.parse(file, [
+          "DateTimeOriginal",
+          "CreateDate",
+          "DateTimeDigitized",
+          "ModifyDate",
+          "DateCreated",
+        ])) as Record<string, unknown> | null;
+        if (!exifData) return undefined;
+
+        const dateCandidates = [
+          exifData.DateTimeOriginal,
+          exifData.CreateDate,
+          exifData.DateTimeDigitized,
+          exifData.ModifyDate,
+          exifData.DateCreated,
+        ];
+
+        for (const candidate of dateCandidates) {
+          const normalizedDate = normalizeExifDate(candidate);
+          if (normalizedDate) {
+            return normalizedDate;
+          }
+        }
+      } catch {
+        return undefined;
+      }
+
+      return undefined;
+    };
+
+    const isDraftQueued = (fileName: string) => {
+      return queue.some((item) => item.file.name === fileName);
+    };
+
+    const getEffectiveCity = (draft: PhotoDraft) => {
+      if (draft.meta.city) {
+        return draft.meta.city;
+      }
+
+      if (!isDraftQueued(draft.file.name) && lastSelectedCity) {
+        return lastSelectedCity;
+      }
+
+      return "";
+    };
+
+    const setMetaForm = (meta: PhotoMeta, cityValue?: string) => {
+      if (
+        !metaId ||
+        !metaTitle ||
+        !metaTags ||
+        !metaDate ||
+        !metaWidth ||
+        !metaHeight ||
+        !metaDescription ||
+        !citySelect
+      ) {
+        return;
+      }
+      metaId.value = meta.id;
+      metaTitle.value = meta.title;
+      metaTags.value = (meta.tags ?? []).join(", ");
+      metaDate.value = meta.date;
+      metaWidth.value = meta.image.width ? String(meta.image.width) : "";
+      metaHeight.value = meta.image.height ? String(meta.image.height) : "";
+      metaDescription.value = meta.description ?? "";
+      citySelect.value = cityValue ?? meta.city;
+    };
 
     const readMetaForm = (target: PhotoMeta) => {
-      if (!metaId || !metaTitle || !metaTags || !metaDate || !metaWidth || !metaHeight || !metaDescription || !citySelect) {
-        return
+      if (
+        !metaId ||
+        !metaTitle ||
+        !metaTags ||
+        !metaDate ||
+        !metaWidth ||
+        !metaHeight ||
+        !metaDescription ||
+        !citySelect
+      ) {
+        return;
       }
-      target.id = metaId.value.trim()
-      target.title = metaTitle.value.trim()
+      target.id = metaId.value.trim();
+      target.title = metaTitle.value.trim();
       const parsedTags = metaTags.value
         .split(",")
         .map((tag) => tag.trim())
-        .filter(Boolean)
-      target.tags = parsedTags.length ? parsedTags : undefined
-      target.date = metaDate.value
-      target.image.width = Number(metaWidth.value) || 0
-      target.image.height = Number(metaHeight.value) || 0
-      target.description = metaDescription.value.trim() || undefined
-    }
+        .filter(Boolean);
+      target.tags = parsedTags.length ? parsedTags : undefined;
+      target.city = citySelect.value.trim();
+      target.date = metaDate.value;
+      target.image.width = Number(metaWidth.value) || 0;
+      target.image.height = Number(metaHeight.value) || 0;
+      target.description = metaDescription.value.trim() || undefined;
+
+      if (target.city) {
+        lastSelectedCity = target.city;
+      }
+    };
 
     const renderQueue = () => {
-      if (!queueList) return
-      queueList.innerHTML = ""
+      if (!queueList) return;
+      queueList.innerHTML = "";
       if (!queue.length) {
-        const emptyItem = document.createElement("li")
-        emptyItem.className = "text-gray-500"
-        emptyItem.textContent = "No queued photos"
-        queueList.appendChild(emptyItem)
-        return
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "text-gray-500";
+        emptyItem.textContent = "No queued photos";
+        queueList.appendChild(emptyItem);
+        return;
       }
 
       queue.forEach((item, index) => {
-        const li = document.createElement("li")
-        li.className = "flex items-center justify-between gap-2"
-        
-        const textSpan = document.createElement("span")
-        textSpan.className = "flex-1 truncate"
-        textSpan.textContent = `${index + 1}. ${item.meta.title || item.file.name} - ${capitalizeString(item.meta.city)}`
-        
-        const iconContainer = document.createElement("div")
-        iconContainer.className = "flex gap-2 shrink-0"
-        
+        const li = document.createElement("li");
+        li.className = "flex items-center justify-between gap-2";
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "flex-1 truncate";
+        textSpan.textContent = `${index + 1}. ${item.meta.title || item.file.name} - ${capitalizeString(item.meta.city)}`;
+
+        const iconContainer = document.createElement("div");
+        iconContainer.className = "flex gap-2 shrink-0";
+
         // Edit/pencil icon
-        const editBtn = document.createElement("button")
-        editBtn.type = "button"
-        editBtn.className = "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 p-1 transition-colors"
-        editBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className =
+          "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 p-1 transition-colors";
+        editBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`;
         editBtn.onclick = (e) => {
-          e.preventDefault()
-          const draftIndex = drafts.findIndex((d) => d.file.name === item.file.name)
-          console.log(draftIndex)
+          e.preventDefault();
+          const draftIndex = drafts.findIndex(
+            (d) => d.file.name === item.file.name,
+          );
+          console.log(draftIndex);
           if (draftIndex !== -1) {
-            currentIndex = draftIndex
-            renderPreview()
+            currentIndex = draftIndex;
+            renderPreview();
           }
-        }
-        
+        };
+
         // Delete icon
-        const deleteBtn = document.createElement("button")
-        deleteBtn.type = "button"
-        deleteBtn.className = "text-red-500 hover:text-red-700 dark:hover:text-red-400 p-1 transition-colors"
-        deleteBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className =
+          "text-red-500 hover:text-red-700 dark:hover:text-red-400 p-1 transition-colors";
+        deleteBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
         deleteBtn.onclick = (e) => {
-          e.preventDefault()
-          queue.splice(index, 1)
-          renderQueue()
-          if (uploadAllBtn) uploadAllBtn.disabled = queue.length === 0
-        }
-        
-        iconContainer.appendChild(editBtn)
-        iconContainer.appendChild(deleteBtn)
-        
-        li.appendChild(textSpan)
-        li.appendChild(iconContainer)
-        queueList.appendChild(li)
-      })
-    }
+          e.preventDefault();
+          queue.splice(index, 1);
+          renderQueue();
+          if (uploadAllBtn) uploadAllBtn.disabled = queue.length === 0;
+        };
+
+        iconContainer.appendChild(editBtn);
+        iconContainer.appendChild(deleteBtn);
+
+        li.appendChild(textSpan);
+        li.appendChild(iconContainer);
+        queueList.appendChild(li);
+      });
+    };
 
     const renderPreview = () => {
-      if (!previewImage || !previewEmpty || !previewCount || !previewName || !prevPhotoBtn || !nextPhotoBtn || !queueBtn || !uploadAllBtn) {
-        return
+      if (
+        !previewImage ||
+        !previewEmpty ||
+        !previewCount ||
+        !previewName ||
+        !prevPhotoBtn ||
+        !nextPhotoBtn ||
+        !queueBtn ||
+        !uploadAllBtn
+      ) {
+        return;
       }
       if (!drafts.length) {
-        previewImage.classList.add("hidden")
-        previewEmpty.classList.remove("hidden")
-        previewImage.src = ""
-        previewName.textContent = ""
-        previewCount.textContent = "0 / 0"
-        prevPhotoBtn.disabled = true
-        nextPhotoBtn.disabled = true
-        queueBtn.disabled = true
-        uploadAllBtn.disabled = queue.length === 0
-        return
+        previewImage.classList.add("hidden");
+        previewEmpty.classList.remove("hidden");
+        previewImage.src = "";
+        previewName.textContent = "";
+        previewCount.textContent = "0 / 0";
+        prevPhotoBtn.disabled = true;
+        nextPhotoBtn.disabled = true;
+        queueBtn.disabled = true;
+        uploadAllBtn.disabled = queue.length === 0;
+        return;
       }
 
-      const draft = drafts[currentIndex]
-      previewImage.src = draft.previewUrl
-      previewImage.classList.remove("hidden")
-      previewEmpty.classList.add("hidden")
-      previewName.textContent = draft.file.name
-      previewCount.textContent = `${currentIndex + 1} / ${drafts.length}`
-      prevPhotoBtn.disabled = currentIndex === 0
-      nextPhotoBtn.disabled = currentIndex === drafts.length - 1
-      queueBtn.disabled = false
-      uploadAllBtn.disabled = queue.length === 0
-      setMetaForm(draft.meta)
-    }
+      const draft = drafts[currentIndex];
+      const effectiveCity = getEffectiveCity(draft);
+      previewImage.src = draft.previewUrl;
+      previewImage.classList.remove("hidden");
+      previewEmpty.classList.add("hidden");
+      previewName.textContent = draft.file.name;
+      previewCount.textContent = `${currentIndex + 1} / ${drafts.length}`;
+      prevPhotoBtn.disabled = currentIndex === 0;
+      nextPhotoBtn.disabled = currentIndex === drafts.length - 1;
+      queueBtn.disabled = false;
+      uploadAllBtn.disabled = queue.length === 0;
+      setMetaForm(draft.meta, effectiveCity);
+    };
 
     const enqueueCurrent = () => {
-      if (!drafts.length) return
+      if (!drafts.length) return;
       if (!citySelect?.value.trim()) {
-        if (cityError) cityError.classList.remove("hidden")
-        return
+        if (cityError) cityError.classList.remove("hidden");
+        return;
       }
-      if (cityError) cityError.classList.add("hidden")
-      const draft = drafts[currentIndex]
-      readMetaForm(draft.meta)
-      const exists = queue.some((item) => item.file.name === draft.file.name)
+      if (cityError) cityError.classList.add("hidden");
+      const draft = drafts[currentIndex];
+      readMetaForm(draft.meta);
+      const exists = queue.some((item) => item.file.name === draft.file.name);
       if (!exists) {
-        queue.push({ file: draft.file, meta: structuredClone(draft.meta) })
-        renderQueue()
-        if (uploadAllBtn) uploadAllBtn.disabled = false
+        queue.push({ file: draft.file, meta: structuredClone(draft.meta) });
+        renderQueue();
+        if (uploadAllBtn) uploadAllBtn.disabled = false;
       }
-    }
+    };
 
     if (filesInput) {
-      filesInput.addEventListener("change", () => {
-        const fileList = filesInput.files
-        if (!fileList || !fileList.length) return
-        const selectedCity = citySelect?.value.trim() || ""
-        drafts = Array.from(fileList).map((file) => {
-          const previewUrl = URL.createObjectURL(file)
+      filesInput.addEventListener("change", async () => {
+        const fileList = filesInput.files;
+        if (!fileList || !fileList.length) return;
+        const selectedCity = citySelect?.value.trim() || "";
+        lastSelectedCity = selectedCity;
+
+        drafts = await Promise.all(Array.from(fileList).map(async (file) => {
+          const previewUrl = URL.createObjectURL(file);
+          const takenDate = await getPhotoTakenDate(file);
+          const fallbackDate = formatDateForInput(new Date(file.lastModified));
           const meta: PhotoMeta = {
             id: file.name,
             city: selectedCity,
             title: file.name.replace(/\.[^/.]+$/, ""),
             tags: [],
-            date: new Date().toISOString().slice(0, 10),
+            date: takenDate ?? fallbackDate,
             description: "",
             image: {
               src: previewUrl,
               width: 0,
               height: 0,
             },
-          }
-          const img = new Image()
+          };
+          const img = new Image();
           img.onload = () => {
-            meta.image.width = img.naturalWidth
-            meta.image.height = img.naturalHeight
+            meta.image.width = img.naturalWidth;
+            meta.image.height = img.naturalHeight;
             if (drafts[currentIndex]?.file.name === file.name) {
-              setMetaForm(meta)
+              setMetaForm(meta, getEffectiveCity(drafts[currentIndex]));
             }
-          }
-          img.src = previewUrl
-          return { file, previewUrl, meta }
-        })
-        currentIndex = 0
-        renderPreview()
-      })
+          };
+          img.src = previewUrl;
+          return { file, previewUrl, meta };
+        }));
+        currentIndex = 0;
+        renderPreview();
+      });
     }
 
     if (prevPhotoBtn) {
       prevPhotoBtn.addEventListener("click", () => {
-        if (!drafts.length) return
-        readMetaForm(drafts[currentIndex].meta)
-        currentIndex = Math.max(0, currentIndex - 1)
-        renderPreview()
-      })
+        if (!drafts.length) return;
+        readMetaForm(drafts[currentIndex].meta);
+        currentIndex = Math.max(0, currentIndex - 1);
+        renderPreview();
+      });
     }
 
     if (nextPhotoBtn) {
       nextPhotoBtn.addEventListener("click", () => {
-        if (!drafts.length) return
-        readMetaForm(drafts[currentIndex].meta)
-        currentIndex = Math.min(drafts.length - 1, currentIndex + 1)
-        renderPreview()
-      })
+        if (!drafts.length) return;
+        readMetaForm(drafts[currentIndex].meta);
+        currentIndex = Math.min(drafts.length - 1, currentIndex + 1);
+        renderPreview();
+      });
     }
 
     if (queueBtn) {
       queueBtn.addEventListener("click", () => {
-        enqueueCurrent()
-      })
+        enqueueCurrent();
+      });
     }
 
     if (uploadAllBtn) {
       uploadAllBtn.addEventListener("click", async () => {
-        if (!queue.length) return
-        uploadAllBtn.disabled = true
-        const response = await mockUploadApi(queue)
-        if (response.ok) {
-          queue = []
-          renderQueue()
+        if (!queue.length) return;
+        uploadAllBtn.disabled = true;
+
+        try {
+          const response = await uploadAllPhotos(queue);
+
+          if (response.ok) {
+            alert(`Successfully uploaded ${response.uploaded} photo(s)!`);
+            queue = [];
+            drafts = [];
+            currentIndex = 0;
+            renderQueue();
+            renderPreview();
+            if (filesInput) filesInput.value = "";
+          } else {
+            alert(
+              `Uploaded ${response.uploaded} photo(s), but ${response.failed} failed. Check console for details.`,
+            );
+            // Remove successfully uploaded items from queue
+            queue = queue.filter((item) =>
+              response.errors.some(
+                (err: any) => err.item.file.name === item.file.name,
+              ),
+            );
+            renderQueue();
+          }
+        } catch (error) {
+          console.error("Upload failed:", error);
+          alert("Upload failed. Please try again.");
+        } finally {
+          uploadAllBtn.disabled = queue.length === 0;
         }
-        uploadAllBtn.disabled = queue.length === 0
-      })
+      });
     }
 
-    const metaInputs = [metaId, metaTitle, metaTags, metaDate, metaWidth, metaHeight, metaDescription]
+    const metaInputs = [
+      metaId,
+      metaTitle,
+      metaTags,
+      metaDate,
+      metaWidth,
+      metaHeight,
+      metaDescription,
+    ];
     metaInputs.forEach((input) => {
-      if (!input) return
+      if (!input) return;
       input.addEventListener("input", () => {
-        if (!drafts.length) return
-        readMetaForm(drafts[currentIndex].meta)
-      })
-    })
+        if (!drafts.length) return;
+        readMetaForm(drafts[currentIndex].meta);
+      });
+    });
 
     if (citySelect) {
       citySelect.addEventListener("change", () => {
-        if (citySelect.value.trim()) {
-          if (cityError) cityError.classList.add("hidden")
+        const selectedCity = citySelect.value.trim();
+        if (selectedCity) {
+          lastSelectedCity = selectedCity;
+          if (cityError) cityError.classList.add("hidden");
         }
-        if (!drafts.length) return
-        readMetaForm(drafts[currentIndex].meta)
-      })
+        if (!drafts.length) return;
+        readMetaForm(drafts[currentIndex].meta);
+      });
     }
-    
+
     if (loginBtn) {
       loginBtn.addEventListener("click", async () => {
         // Set loading state
-        loginBtn.disabled = true
-        loginSpinner?.classList.remove("hidden")
-        if (loginText) loginText.textContent = "Logging in..."
-        
+        loginBtn.disabled = true;
+        loginSpinner?.classList.remove("hidden");
+        if (loginText) loginText.textContent = "Logging in...";
+
         try {
           await signIn();
         } catch (error) {
           // Reset button state on error
-          loginBtn.disabled = false
-          loginSpinner?.classList.add("hidden")
-          if (loginText) loginText.textContent = "Login with GitHub"
-          console.error("Login failed:", error)
+          loginBtn.disabled = false;
+          loginSpinner?.classList.add("hidden");
+          if (loginText) loginText.textContent = "Login with GitHub";
+          console.error("Login failed:", error);
         }
-      })
+      });
     }
-    
+
     if (logoutBtn) {
       logoutBtn.addEventListener("click", async () => {
         await authClient.signOut({
           fetchOptions: {
             onSuccess: () => {
-              window.location.href = "/admin"
-            }
-          }
-        })
-      })
+              window.location.href = "/admin";
+            },
+          },
+        });
+      });
     }
   </script>
 </Layout>

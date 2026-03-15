@@ -1,5 +1,4 @@
 import RAW_CITY_METADATA from "@/content/metadata.json";
-import { capitalizeString, normalizeSegment } from "./utils";
 
 /**
  * Given an Astro folder slug like:

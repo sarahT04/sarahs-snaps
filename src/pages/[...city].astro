@@ -8,16 +8,10 @@ import { CircleX, ArrowLeft, ArrowRight, ZoomIn } from "lucide-react";
 import { getAllMetadata } from "@/lib/metadata";
 import { formatDate } from "@/lib/utils";
 
-export const prerender = true;
+export const prerender = false;
 
 const INITIAL_BATCH_SIZE = 24;
 const LOAD_BATCH_SIZE = 24;
-
-export function getStaticPaths() {
-  const locations = getAllMetadata();
-  const paths = locations.map((loc) => ({ params: { city: loc.city }}));
-  return paths;
-}
 
 const city = Astro.params.city || "";
 
